@@ -38,9 +38,10 @@ video_ids = effective_data_stats.keys()
 effective_ratings = [effective_data_stats[x] for x in video_ids if x in language_data_stats]
 num_language = [language_data_stats[x] for x in video_ids if x in language_data_stats]
 correlation = pearsonr(effective_ratings, num_language)[0]
+num_non_english = len([x for x in video_ids if x in language_data_stats and not language_data_stats[x] == 0])
 
 print("Number of video ids: %d" % (len(video_ids)))
 print("Correlation between # of language and effectiveness rating: %.3f" % (correlation))
-print("Highest number of language on a video: %d" % (max(num_language)))
+print("Number of english videos: %d (%d%%)" % (num_non_english, (num_non_english/len(language_data_stats))*100))
 plt.scatter(effective_ratings, num_language, s = 5)
 plt.show()
