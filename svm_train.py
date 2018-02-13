@@ -63,14 +63,13 @@ train_sents_out = [int(effective_data_stats[x]) for x in train if x in sentiment
 test_sents = [sentiments_data_stats[x] for x in test if x in sentiments_data_stats]
 test_sents_out = [int(effective_data_stats[x]) for x in test if x in sentiments_data_stats]
 
-topics_SVM = SVC()
-#print(len(train_topics[0]))
+topics_SVM = SVC(kernel='rbf', degree=3)
 print(train_topics[0].shape)
 print(len(train_topics_out))
 topics_SVM.fit(train_topics, train_topics_out)
 topics_score = topics_SVM.score(test_topics, test_topics_out)
 
-sents_SVM = SVC()
+sents_SVM = SVC(kernel='rbf')
 sents_SVM.fit(train_sents, train_sents_out)
 sents_score = sents_SVM.score(test_sents, test_sents_out)
 
