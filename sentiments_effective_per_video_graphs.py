@@ -44,6 +44,8 @@ for video_id, ratings in effective_data.items():
 video_ids = effective_data_stats.keys()
 if not os.path.exists("sentiments/"):
     os.makedirs("sentiments/")
+
+fig = plt.figure(dpi=200)
 for sentiment in sentiments_ratings:
     sentiments_ratings[sentiment].sort()
     x = [x for x in range(1, len(sentiments_ratings[sentiment])+1)]
@@ -53,13 +55,19 @@ for sentiment in sentiments_ratings:
         ticks = x[::steps]
     else:
         ticks = x # Every 5 elements for the x-axis tick marks
-    plt.figure()
+
+    fig2 = fig.add_subplot(5, 6, sentiment+1)
+    fig2.scatter(x, sentiments_ratings[sentiment], s = 5)
+    fig2.set_yticklabels([])
+    fig2.set_xticklabels([])
+    '''plt.figure()
     plt.xticks(ticks)
     plt.scatter(x, sentiments_ratings[sentiment], s = 5)
     plt.xlabel("All videos with \"" + str(sentiments_list[sentiment]) + "\" sentiment")
     plt.ylabel("Effectiveness")
     plt.title("Effectiveness vs. \"" + str(sentiments_list[sentiment]) + "\" sentiment")
-    plt.savefig("sentiments/sentiment_" + str(sentiments_list[sentiment]))
-plt.show()
+    plt.savefig("sentiments/sentiment_" + str(sentiments_list[sentiment]))'''
+fig.savefig("sentiments_grid.png")
+fig.show()
 
 print("Number of video ids: %d" % (len(video_ids)))
