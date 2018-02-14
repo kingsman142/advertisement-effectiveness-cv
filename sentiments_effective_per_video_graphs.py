@@ -55,7 +55,6 @@ for sentiment in sentiments_ratings:
         ticks = x[::steps]
     else:
         ticks = x # Every 5 elements for the x-axis tick marks
-
     fig2 = fig.add_subplot(5, 6, sentiment+1)
     fig2.scatter(x, sentiments_ratings[sentiment], s = 5)
     fig2.set_yticklabels([])
