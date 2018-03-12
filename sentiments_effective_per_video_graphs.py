@@ -66,6 +66,7 @@ for sentiment in sentiments_ratings:
     plt.ylabel("Effectiveness")
     plt.title("Effectiveness vs. \"" + str(sentiments_list[sentiment]) + "\" sentiment")
     plt.savefig("sentiments/sentiment_" + str(sentiments_list[sentiment]))'''
+#plt.show()
 fig.savefig("sentiments_grid.png")
 fig.show()
 

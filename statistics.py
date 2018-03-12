@@ -53,19 +53,31 @@ for video_id, ratings in effective_data.items():
         language_ratings = np.array(language_data_stats[video_id]).astype(int)
         language_std = np.std(language_ratings)
 
-    effective_data_stats[video_id] = (ratings_std, ratings_mean, ratings_mode, ratings_cv) # Assign this video's data as a tuple
+    effective_data_stats[video_id] = (ratings_std, ratings_mean, ratings_mode, ratings_cv, video_id) # Assign this video's data as a tuple
     exciting_data_stats[video_id] = exciting_std
     funny_data_stats[video_id] = funny_std
     language_data_stats[video_id] = language_std
 
 #print(effective_data_stats)
 cov_threshold_5 = [x for x in effective_data_stats.values() if abs(x[3]) <= 0.5] # Find the number of videos with coefficient of variation v where |v| <= .5
+cov_threshold_4 = [x for x in effective_data_stats.values() if abs(x[3]) <= 0.4] # Find the number of videos with coefficient of variation v where |v| <= .4
 cov_threshold_3 = [x for x in effective_data_stats.values() if abs(x[3]) <= 0.3] # Find the number of videos with coefficient of variation v where |v| <= .3
 avg_exciting_std = sum(exciting_data_stats.values())/len(exciting_data_stats) # Average standard deviation
 avg_funny_std = sum(funny_data_stats.values())/len(funny_data_stats) # Average standard deviation
 avg_language_std = sum(language_data_stats.values())/len(language_data_stats) # Average standard deviation
 print("Num Videos (|cov| <= 0.5): %d" % len(cov_threshold_5))
+print("Num Videos (|cov| <= 0.4): %d" % len(cov_threshold_4))
 print("Num Videos (|cov| <= 0.3): %d" % len(cov_threshold_3))
 print("Average exciting rating std: %.4f" % (avg_exciting_std))
 print("Average funny rating std: %.4f" % (avg_funny_std))
 print("Average language rating std: %.4f" % (avg_language_std))
+
+# Earlier, we computed all the videos with a certain threshold on their coefficient of variation.
+# Let's prune out videos that don't pass our threshold and use the ones below as a 'useful' ones.
+cov_threshold_4.sort(key = lambda tup: -tup[1])
+useful_eff_ratings_ids = [x[4] for x in cov_threshold_4]
+useful_eff_ratings = [x[1] for x in cov_threshold_4]
+useful_videos_concat = ["www.youtube.com/watch?v="+useful_eff_ratings_ids[i]+" "+str(useful_eff_ratings[i]) for i in range(0, len(useful_eff_ratings))]
+with open("useful-videos-effectiveness-ratings.txt", 'w') as useful_videos:
+    for video_rating in useful_videos_concat:
+        useful_videos.write(video_rating+'\n')
