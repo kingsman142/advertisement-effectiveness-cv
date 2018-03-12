@@ -46,7 +46,6 @@ if not os.path.exists("topics/"):
     os.makedirs("topics/")
 
 fig = plt.figure(dpi=200)
-#fig.tight_layout()
 for topic in topics_ratings:
     topics_ratings[topic].sort()
     x = [x for x in range(1, len(topics_ratings[topic])+1)]
