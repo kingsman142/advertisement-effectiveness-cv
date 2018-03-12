@@ -30,9 +30,8 @@ for video_id, ratings in effective_data.items():
 
 # Calculate the correlation between number of sentiments and average ratings
 video_ids = effective_data_stats.keys()
-effective_ratings = [(effective_data_stats[x], x) for x in video_ids]
+effective_ratings = [effective_data_stats[x] for x in video_ids]
 effective_ratings.sort()
-num_sentiments
 num_sentiments = [sentiments_data_stats[x] for x in video_ids]
 correlation = pearsonr(effective_ratings, num_sentiments)[0]
 
