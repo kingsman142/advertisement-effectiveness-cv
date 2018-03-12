@@ -56,21 +56,19 @@ for topic in topics_ratings:
         ticks = x[::steps]
     else:
         ticks = x # Every 5 elements for the x-axis tick marks
-    #plt.figure()
-    fig2 = fig.add_subplot(7, 6, topic+1)
+    '''fig2 = fig.add_subplot(7, 6, topic+1)
     fig2.scatter(x, topics_ratings[topic], s = 5)
     fig2.set_yticklabels([])
-    fig2.set_xticklabels([])
-    #fig2.xlabel("All videos with \"" + str(topics_list[topic]) + "\" topic")
-    #fig2.ylabel("Effectiveness")
-    #fig2.set_title(str(topics_list[topic]))
-    '''plt.scatter(x, topics_ratings[topic], s = 5)
+    fig2.set_xticklabels([])'''
+    plt.figure()
+    plt.xticks(ticks)
+    plt.scatter(x, topics_ratings[topic], s = 5)
     plt.xlabel("All videos with \"" + str(topics_list[topic]) + "\" topic")
     plt.ylabel("Effectiveness")
     plt.title("Effectiveness vs. \"" + str(topics_list[topic]) + "\" topic")
-    plt.savefig("topics/topic_" + str(topics_list[topic]))'''
+    plt.savefig("topics/topic_" + str(topics_list[topic]))
 #plt.show()
-fig.savefig("topics_grid.png")
+#fig.savefig("topics_grid.png")
 fig.show()
 
 print("Number of video ids: %d" % (len(video_ids)))
