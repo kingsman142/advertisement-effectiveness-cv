@@ -40,10 +40,10 @@ for video_id, ratings in effective_data.items():
 
     effective_data_stats[video_id] = ratings_mean
     video_sentiment = sentiments_list[sentiments_data_stats[video_id]-1]
-    if video_sentiment in positive_sentiments_sentiments:
+    if video_sentiment in positive_sentiments:
         positive_sentiments_sum += ratings_mean
         positive_sentiments_count += 1
-    elif video_sentiment in negative_sentiment_sentiments:
+    elif video_sentiment in negative_sentiments:
         negative_sentiment_sum += ratings_mean
         negative_sentiment_count += 1
 
