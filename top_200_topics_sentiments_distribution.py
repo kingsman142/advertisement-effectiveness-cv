@@ -68,25 +68,27 @@ plt.rcParams["figure.figsize"] = (17, 8)
 plt.barh(zero_to_thirtyeight, topics_height, align='center', tick_label=topics_labels)
 plt.ylabel("Topics")
 plt.xlabel("Counts")
-plt.title("Topics Distribution of Top 200 Most Effective Ads")
+plt.title("Topics Distribution of 200 Most Effective Ads")
 plt.savefig("top_200_topics_distribution_bar.png")
 
 plt.figure()
 plt.barh(zero_to_thirty, sentiments_height, align='center', tick_label=sentiments_labels)
 plt.ylabel("Sentiments")
 plt.xlabel("Counts")
-plt.title("Sentiments Distribution of Top 200 Most Effective Ads")
+plt.title("Sentiments Distribution of 200 Most Effective Ads")
 plt.savefig("top_200_sentiments_distribution_bar.png")
 
 plt.rcParams["figure.figsize"] = (8, 8)
 plt.figure()
-plt.title("Topics Distribution of Top 200 Most Effective Ads")
-plt.pie(topics_pie, labels=topics_labels, autopct='%.2f%%')
+topics_colors = ["C"+str(topics_list.index(topic) % 10) for topic in topics_labels]
+plt.title("Topics Distribution of 200 Most Effective Ads")
+plt.pie(topics_pie, labels=topics_labels, autopct='%.2f%%', colors=topics_colors)
 plt.savefig("top_200_topics_distribution_pie.png")
 
 plt.figure()
-plt.title("Sentiments Distribution of Top 200 Most Effective Ads")
-plt.pie(sentiments_pie, labels=sentiments_labels, autopct='%.2f%%')
+sentiments_colors = ["C"+str(sentiments_list.index(sentiment) % 10) for sentiment in sentiments_labels]
+plt.title("Sentiments Distribution of 200 Most Effective Ads")
+plt.pie(sentiments_pie, labels=sentiments_labels, autopct='%.2f%%', colors=sentiments_colors)
 plt.savefig("top_200_sentiments_distribution_pie.png")
 
 #plt.show()
