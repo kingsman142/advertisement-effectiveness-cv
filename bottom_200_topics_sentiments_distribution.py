@@ -40,6 +40,13 @@ for video_id, ratings in effective_data.items():
 topics_count = np.zeros(len(topics_list))
 sentiments_count = np.zeros(len(sentiments_list))
 
+topics_individual_counts = [0] * len(topics_list)
+sents_individual_counts = [0] * len(sentiments_list)
+for id, topic in topics_data.items():
+    topics_individual_counts[topic-1] += 1
+for id, sentiment in sentiments_data.items():
+    sents_individual_counts[sentiment-1] += 1
+
 with open('useful-videos-effectiveness-ratings.txt', 'r') as useful_videos:
     bottom_200 = list(reversed([x for x in itertools.islice(useful_videos, None)][-(1):-(200+1):-1]))
 for i in range(0, 200):
@@ -62,6 +69,26 @@ for (count, sentiment) in sorted([(count, sentiment) for (sentiment, count) in s
     sentiments_height.append(count)
 topics_pie = [height/sum(topics_height) for height in topics_height]
 sentiments_pie = [height/sum(sentiments_height) for height in sentiments_height]
+
+topics_distribution = []
+sentiments_distribution = []
+i = 0
+for topic in topics_labels:
+    topic_index = topics_list.index(topic)
+    topic_count = topics_individual_counts[topic_index]
+    topics_distribution.append(float(topic_count)/sum(topics_individual_counts))
+    print("%s: %.2f %.2f" % (topic, topics_distribution[i]*100.0, topics_pie[i]*100.0))
+    i += 1
+i = 0
+print()
+for sent in sentiments_labels:
+    sent_index = sentiments_list.index(sent)
+    sent_count = sents_individual_counts[sent_index]
+    sentiments_distribution.append(float(sent_count)/sum(sents_individual_counts))
+    print("%s: %.2f %.2f" % (sent, sentiments_distribution[i]*100.0, sentiments_pie[i]*100.0))
+    i += 1
+topics_pie_normalized = [topics_pie[i]/topics_distribution[i] for i in range(0, len(topics_distribution))]
+sentiments_pie_normalized = [sentiments_pie[i]/sentiments_distribution[i] for i in range(0, len(sentiments_distribution))]
 
 zero_to_thirty = [-i for i in range(0, 30)]
 zero_to_thirtyeight = [-i for i in range(0, 38)]
@@ -90,5 +117,21 @@ plt.figure()
 plt.title("Sentiments Distribution of Bottom 200 Most Effective Ads")
 plt.pie(sentiments_pie, labels=sentiments_labels, autopct='%.2f%%')
 plt.savefig("bottom_200_sentiments_distribution_pie.png")
+
+topics_labels_copy = list(topics_labels)
+topics_pie_normalized, topics_labels_copy = (list(t) for t in zip(*sorted(zip(topics_pie_normalized, topics_labels_copy))))
+plt.figure()
+plt.title("Normalized Topics Distribution, Bottom 200 Most Effective Ads")
+plt.barh(zero_to_thirtyeight, topics_pie_normalized, align='center', tick_label=topics_labels_copy)
+plt.tight_layout()
+plt.savefig("bottom_200_topics_distribution_normalized.png")
+
+sentiments_labels_copy = list(sentiments_labels)
+sentiments_pie_normalized, sentiments_labels_copy = (list(t) for t in zip(*sorted(zip(sentiments_pie_normalized, sentiments_labels_copy))))
+plt.figure()
+plt.title("Normalized Sentiments Distribution, Bottom 200 Most Effective Ads")
+plt.barh(zero_to_thirty, sentiments_pie_normalized, align='center', tick_label=sentiments_labels_copy)
+plt.tight_layout()
+plt.savefig("bottom_200_sentiments_distribution_normalized.png")
 
 #plt.show()
