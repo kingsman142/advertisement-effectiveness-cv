@@ -1,0 +1,11 @@
+%% Visualize images
+% im_indices is a vector of indices into ims in the order to display
+% ims is a XxYx3xN matrix of N images each sized XxYx3
+% range is the range of im_indices to display
+% title is the text to display as the title
+
+function [] = VisualizeImages(im_indices,ims,range,title)
+    montage(img(:,:,:,im_indices(range)));
+    title(title)
+
+end

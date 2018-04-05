@@ -1,0 +1,49 @@
+%% Visualize predicted sets
+
+function [] = VisualizePredictedSets(predicted, test_label, test_set_img, k)
+
+    N = size(test_label,1);
+    
+    predictions = predicted;
+
+
+    %% visualize actual
+    [p i] = sort(test_label,'descend');
+
+    subplot(131)
+    curr_actual = test_label(i(1:k));
+    VisualizeImages(i,test_set_img,1:k,sprintf('High actual memorability\nmean: %g, min: %g, max: %g', ...
+        mean(curr_actual), min(curr_actual), max(curr_actual)));
+
+    subplot(132)
+    curr_actual = test_label(i((floor(N/2-k/2)+1):(floor(N/2+k/2))));
+    VisualizeImages(i,test_set_img,(floor(N/2-k/2)+1):(floor(N/2+k/2)),sprintf('Middle actual memorability\nmean: %g, min: %g, max: %g', ...
+        mean(curr_actual), min(curr_actual), max(curr_actual)));
+
+    subplot(133)
+    curr_actual = test_label(i((N-k+1):N));
+    VisualizeImages(i,test_set_img,(N-k+1):N,sprintf('Low actual memorability\nmean: %g, min: %g, max: %g', ...
+        mean(curr_actual), min(curr_actual), max(curr_actual)));
+
+
+
+    %% visualize predictions
+    [p i] = sort(predictions,'descend');
+
+    subplot(234)
+    curr_actual = test_label(i(1:k));
+    VisualizeImages(i,test_set_img,1:k,sprintf('High predicted memorability\nmean: %g, min: %g, max: %g', ...
+        mean(curr_actual), min(curr_actual), max(curr_actual)));
+
+    subplot(235)
+    curr_actual = test_label(i((floor(N/2-k/2)+1):(floor(N/2+k/2))));
+    VisualizeImages(i,test_set_img,(floor(N/2-k/2)+1):(floor(N/2+k/2)),sprintf('Middle predicted memorability\nmean: %g, min: %g, max: %g', ...
+        mean(curr_actual), min(curr_actual), max(curr_actual)));
+
+    subplot(236)
+    curr_actual = test_label(i((N-k+1):N));
+    VisualizeImages(i,test_set_img,(N-k+1):N,sprintf('Low predicted memorability\nmean: %g, min: %g, max: %g', ...
+        mean(curr_actual), min(curr_actual), max(curr_actual)));
+
+end
+

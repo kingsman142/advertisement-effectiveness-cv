@@ -3,6 +3,8 @@ import numpy as np
 from scipy.stats import pearsonr
 import scipy.stats
 import matplotlib.pyplot as plt
+from sklearn.linear_model import LogisticRegression
+import pickle
 
 VIDEO_EFFECTIVE_RAW_FILE = "./annotations_videos/video/raw_result/video_Effective_raw.json"
 exciting_RAW_FILE = "./annotations_videos/video/cleaned_result/video_Exciting_clean.json"
@@ -31,6 +33,22 @@ video_ids = effective_data_stats.keys()
 effective_ratings = [effective_data_stats[x] for x in video_ids if x in exciting_data_stats]
 num_exciting = [exciting_data_stats[x] for x in video_ids if x in exciting_data_stats]
 correlation = pearsonr(effective_ratings, num_exciting)[0]
+
+effective_ratings_new = np.array([int(round(rating)) for rating in effective_ratings]).reshape(-1, 1)
+num_exciting_new = np.array(num_exciting).reshape(-1, 1)
+train_size = int(len(effective_ratings_new)*.7)
+effective_train = effective_ratings_new[0:train_size]
+exciting_train = num_exciting_new[0:train_size]
+effective_test = effective_ratings_new[train_size:]
+exciting_test = num_exciting_new[train_size:]
+
+exciting_logregress = LogisticRegression()
+exciting_logregress.fit(exciting_train, effective_train)
+logress_score = exciting_logregress.score(exciting_test, effective_test)
+print("Logistic Regression Score: %.4f" % (logress_score))
+exciting_pred = exciting_logregress.predict(exciting_test)
+pickle.dump(exciting_logregress, open("exciting_logregress.pkl", "wb+"))
+with open("log_regress_x.txt", )
 
 print("Number of video ids: %d" % (len(video_ids)))
 print("Correlation between exciting and effectiveness rating: %.3f" % (correlation))

@@ -1,0 +1,217 @@
+addpath(genpath('./Code/Library/LabelMeToolbox'));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 1) Build SUN index
+HOMEANNOTATIONS = 'http://labelme.csail.mit.edu/Annotations';
+HOMEIMAGES = 'http://labelme.csail.mit.edu/Images';
+
+error('replace line below with directory containing of images you would like to compute features for');
+%HOMEMEMORYIMAGES = '../Data/Image data/SUN_MEMORY_crop';
+
+% Index and annotations
+folder = folderlist(HOMEANNOTATIONS, 'users/antonio/static_sun_database/');
+Dsun = LMdatabase(HOMEANNOTATIONS, HOMEIMAGES, folder);
+
+% Synonyms
+% [Dsun, unmatched] = LMaddtags(Dsun, 'tagsSUN.txt', 'unmatched');
+
+error('replace line below with structure containing list of filenames in HOMEMEMORYIMAGES you would like to compute features for'); 
+%load('../Data/Experiment data/sorted_target_data.mat'); % the memory experiment data
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 2) Align memory results with Dsun and create structs for texture images
+% read files from folder
+Nfiles = size(sorted_target_data, 1);
+clear Sunfiles
+for k = 1:length(Dsun)
+    Sunfiles{k} = Dsun(k).annotation.filename;
+end
+
+clear Draw scenecategory
+for i = 1:Nfiles
+    disp(i)
+    % Parse filename
+    filename = sorted_target_data{i}.filepath;
+    t = strfind(filename, '/');
+    folder = filename(t(1)+1:t(end)-1);
+    filename = filename(t(end)+1:end);
+    filename = strrep(filename, '_crop.jpg', '.jpg');
+    
+    % Find corresponding file in the labelme struct
+    if ~isempty(strfind(folder, 'Texture'))
+        % It is a texture, therefore, let's create a new annotation file
+        scenecategory{i} = folder;
+        clear Di
+        Di.annotation.object.name = lower(folder);
+        Di.annotation.object.deleted = '0';
+        Di.annotation.object.id = 1;
+        Di.annotation.object.polygon.x = single([1 256 256 1]');
+        Di.annotation.object.polygon.y = single([1 1 256 256]');
+        Di.annotation.object.polygon.t = 1;
+    else
+        j = strmatch(filename, Sunfiles);
+        Di = Dsun(j);
+        scenecategory{i} = strrep(Di.annotation.folder, 'users/antonio/static_sun_database/', '');
+        
+        % Read image
+        % img = LMimread(Di, 1, HOMEIMAGES);
+        [ncols, nrows] = getaproximagesize(Di.annotation);
+        img = zeros([nrows ncols 3]);
+        
+        % Crop annotation together with image
+        [Di.annotation, img, crop] = LMimresizecrop(Di.annotation, img, 256);
+        
+        Di.annotation.url = sprintf('http://labelme.csail.mit.edu/tool.html?collection=LabelMe&mode=i&folder=%s&image=%s', Dsun(j).annotation.folder, Dsun(j).annotation.filename);
+    end
+   
+    % Store in new labelme struct aligned with the images
+    Di.annotation.filename = strrep(filename, '.jpg', '_crop.jpg');
+    Di.annotation.folder = folder;
+    Draw(i) = Di;
+end
+Dmemory = Draw;
+
+% Make sure all object outside the cropped region are removed from the
+% annotation:
+Dmemory = LMvalidobjects(Dmemory);
+Dmemory = addcroplabel(Dmemory);
+
+% Replace object labels taking into account synonyms. The list of synonyms
+% is build manually and it is contained inside the file tagsSUN.txt. This
+% file can be edited to account for other synonyms that I might have
+% missed.
+[Dmemory, unmatched] = LMaddtags(Dmemory, 'tagsSUN.txt', 'keepname');
+
+% Check, index new folder and show cropped images and its annotations
+figure; LMplot(Dmemory, 1668, HOMEMEMORYIMAGES)
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 3) Get object statistics
+% Get segments
+[img, segments, objectnames, counts] = LM2segments(Dmemory, [256 256], HOMEMEMORYIMAGES);
+figure
+montage(reshape(uint8(mod(segments(:,:,1:1000), 255)), [256 256 1 1000]))
+colormap([0 0 0; hsv(255)])
+
+Nobjects = length(objectnames);
+Nimages = length(Dmemory);
+
+[foo,empty] = sort(squeeze(sum(sum(segments==0,1),2)), 'descend'); empty = empty(1:100);
+figure
+montage(reshape(uint8(mod(segments(:,:,empty), 255)), [256 256 1 length(empty)]))
+colormap([0 0 0; hsv(255)])
+
+% Example extrancting stats in one image:
+%ndx = 1513;
+%S = segments(:,:,ndx);
+%  1) get list of object names in the image
+%listofobjects = objectnames(setdiff(unique(S(:)), 0));
+
+% Compute image stats
+Areas  = sparse(Nobjects, Nimages);
+Counts = sparse(Nobjects, Nimages);
+for i = 1:Nimages
+    if LMcountobject(Dmemory(i))>0
+        % Counts
+        objectsinimage = {Dmemory(i).annotation.object.name};
+        [TF, ndx] = ismember(strtrim(lower(objectsinimage)), lower(objectnames));
+        for n = 1:length(ndx)
+            if ndx(n)>0
+                Counts(ndx(n),i) = Counts(ndx(n),i)+1;
+            end
+        end
+        
+        % Area of each object
+        S = segments(:,:,i);
+        ndx = unique([0; S(:)]);
+        area = hist(double(S(:)), double(ndx));
+        ndx = ndx(2:end); area = area(2:end); % remove non labeled pixels
+        Areas(ndx, i) = area;
+    else
+        disp(sprintf('Warning: Image %d is empty', i))
+    end
+end
+
+sptHistObjects = objhist(segments);
+sptHistObjects = sptHistObjects';
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 4) Compute descriptors
+% 4.a) gist
+GISTparam.imageSize = [256 256]; % it works also with non-square images
+GISTparam.orientationsPerScale = [8 8 8 8];
+GISTparam.numberBlocks = 4;
+GISTparam.fc_prefilt = 4;
+
+[gist, GISTparam] = LMgist(Dmemory, HOMEMEMORYIMAGES, GISTparam);
+
+
+% VISUAL WORDS
+
+% 4.b) SIFT visual words
+VWparamsift.imageSize = [256 256]; % it works also with non-square images
+VWparamsift.grid_spacing = 1; % distance between grid centers
+VWparamsift.patch_size = 16; % size of patch from which to compute SIFT descriptor (it has to be a factor of 4)
+VWparamsift.NumVisualWords = 200; % number of visual words
+VWparamsift.Mw = 2; % number of spatial scales for spatial pyramid histogram
+VWparamsift.descriptor = 'sift';
+VWparamsift.w = VWparamsift.patch_size/2; % boundary for SIFT
+
+% Build dictionary of visual words
+VWparamsift = LMkmeansVisualWords(Dmemory(1:10:end), HOMEMEMORYIMAGES, VWparamsift);
+
+% COMPUTE VISUAL WORDS: 
+[VWsift, sptHistsift] = LMdenseVisualWords(Dmemory, HOMEMEMORYIMAGES, VWparamsift);
+sptHistsift = sptHistsift';
+
+
+% 4.c) SSIM visual words
+VWparamssim.imageSize = [256 256]; % it works also with non-square images
+VWparamssim.grid_spacing = 1; % distance between grid centers
+VWparamssim.NumVisualWords = 200; % number of visual words
+VWparamssim.Mw = 2; % number of spatial scales for spatial pyramid histogram
+VWparamssim.descriptor = 'ssim'; 
+VWparamssim.w = 42; % boundary for ssim
+
+% Build dictionary of visual words
+VWparamssim = LMkmeansVisualWords(Dmemory(1:10:end), HOMEMEMORYIMAGES, VWparamssim);
+
+% COMPUTE VISUAL WORDS: 
+[VWssim, sptHistssim] = LMdenseVisualWords(Dmemory, HOMEMEMORYIMAGES, VWparamssim);
+sptHistssim = sptHistssim';
+
+
+% 4.d) HOG visual words
+VWparamhog.imageSize = [256 256]; % it works also with non-square images
+VWparamhog.grid_spacing = 1; % distance between grid centers
+VWparamhog.patch_size = 16; % size of patch from which to compute SIFT descriptor (it has to be a factor of 4)
+VWparamhog.NumVisualWords = 200; % number of visual words
+VWparamhog.Mw = 2; % number of spatial scales for spatial pyramid histogram
+VWparamhog.descriptor = 'hog'; 
+VWparamhog.w = floor(VWparamhog.patch_size/2*2.5); % boundary for HOG
+
+% Build dictionary of visual words
+VWparamhog = LMkmeansVisualWords(Dmemory(1:10:end), HOMEMEMORYIMAGES, VWparamhog);
+
+% COMPUTE VISUAL WORDS: 
+[VWhog, sptHisthog] = LMdenseVisualWords(Dmemory, HOMEMEMORYIMAGES, VWparamhog);
+sptHisthog = sptHisthog';
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% scene category features
+CreateImageNameToCategoriesMapping;
+
+% pixel histogram features
+CreatePixelHistograms;
+
+save('../Data/Image data/target_images','img');
+save('../Data/Image data/target_features','Dmemory','segments','objectnames','sptHistObjects','Areas','Counts',...
+              'gist','GISTparam','VWsift','sptHistsift','VWparamsift','VWssim','sptHistssim',...
+              'VWparamssim','VWhog','sptHisthog','VWparamhog','sceneCatFeatures','pixel_histograms');
+
+
