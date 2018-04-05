@@ -1,0 +1,49 @@
+%% Get split-half correlations averaged over many splits
+
+function [r, rho] = GetConsistencyStats(subject_hrs1, subject_hrs2, use_all_images_human_consistency)
+
+    num_trials = 25;
+
+    for trial_i=1:num_trials
+        train_labels_all = subject_hrs1(trial_i,:)';
+        test_labels_all = subject_hrs2(trial_i,:)';
+
+        if (use_all_images_human_consistency == 't')
+            train_label = train_labels_all(1:2222);
+            test_label = test_labels_all(1:2222);
+        else
+            %train_indices = image_test_indices(trial_i,:); % not a typo, train is set to test set here
+            test_indices = image_test_indices(trial_i,:);
+
+            train_label = train_labels_all(train_indices);
+            test_label = test_labels_all(test_indices);
+        end
+
+        all_predicteds(trial_i,:) = train_label;
+        all_test_labels(trial_i,:) = test_label;
+    end
+
+
+    
+    %% quantify results
+
+    N = size(all_predicteds,1);
+
+    r = zeros(N,1);
+    rank_corr = zeros(N,1);
+    mse = zeros(N,1);
+
+    for i=1:N
+        test_label = all_test_labels(i,:)';
+        predicted = all_predicteds(i,:)';
+        r(i) = corr(test_label, predicted, 'type', 'Pearson');
+        rank_corr(i) = corr(test_label, predicted, 'type', 'Spearman');
+        mse(i) = mean((predicted-test_label).^2);
+    end
+    
+    avg_r = mean(r);
+    avg_rank_corr = mean(rank_corr);
+    avg_mse = mean(mse);
+  
+
+

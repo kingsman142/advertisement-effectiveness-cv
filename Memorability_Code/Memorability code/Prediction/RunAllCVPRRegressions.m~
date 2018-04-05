@@ -1,0 +1,174 @@
+%% Run all CVPR regressions
+
+Predictor_type = 'r'; % c = SVC, r = SVR, w = CWM
+classification_type = 'm'; % m = about median, t = top set, b = bottom set
+classification_set_size = 100; % used for top set and bottom set classification
+resampling = ''; % 1 = Resample training set to uniform distribution, 2 = Resample test set to uniform distribution
+kernel_combination_type = 'p'; % s = sum, p = product
+independent_subject_set = 't'; % t = test on hit rates from an independent subject set, f = test on hit rates from the same subject set as training
+num_trials = 25; % number of test/training splits
+num_grid_search_trials = 4;
+
+do_save = 't'; % t = save, f = don't save
+
+
+%% GIST
+stat_features_to_use = 'g'; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%% SIFT
+stat_features_to_use = 's'; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%% HOG
+stat_features_to_use = 'h'; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%% SSIM
+stat_features_to_use = 'i'; % g = GIST, s = SIFT, h = HOG, i = SSIM, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%% Pixels
+stat_features_to_use = 'p'; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = 'gsh'; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = 'gshp'; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%% best global features combination
+stat_features_to_use = 'gship'; % g = GIST, s = SIFT, h = HOG, i = SSIM, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+
+%%
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 'c'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 'p'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%% Scene categories
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 'e'; % c = Counts, p = Presence, e = Scene categories, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 'a'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%% best object feature
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 's'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 'se'; % c = Counts, p = Presence, e = Scene categories, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 'n'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 'm'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, p = Pixels
+obj_features_to_use = 'b'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%%
+stat_features_to_use = 'gship'; % g = GIST, s = SIFT, h = HOG, i = SSIM, p = Pixels
+obj_features_to_use = 'se'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+
+
+
+%% sum kernel combination
+kernel_combination_type = 's'; % s = sum, p = product
+
+stat_features_to_use = 'gshp'; % g = GIST, s = SIFT, h = HOG, i = SSIM, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+stat_features_to_use = 'gship'; % g = GIST, s = SIFT, h = HOG, i = SSIM, p = Pixels
+obj_features_to_use = ''; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+stat_features_to_use = ''; % g = GIST, s = SIFT, h = HOG, i = SSIM, p = Pixels
+obj_features_to_use = 'se'; % c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+
+
+%% mixed kernel combination
+%{
+kernel_combination_type = 'm';
+k_combination_types = ['p';'p';'p';'p';'p';'s';'s';'s'];
+stat_features_to_use = 'gship'; % g = GIST, s = SIFT, h = HOG, i = SSIM, p = Pixels
+obj_features_to_use = 'set'; % t = attributes, c = Counts, p = Presence, a = Areas, s = Spatial histograms, n = marginal counts, m = marginal areas, b = marginal spatial histograms
+
+Prediction_5;
+%}
+
+

@@ -1,0 +1,20 @@
+%% Gets the hsv mean color of an image
+
+function [mode_hsv] = GetModeColorH_S_andV(im)
+
+    %addpath('/Users/Phillip/Documents/MATLAB/toolboxes/CircStat2010d');
+    
+    rs = im(:,:,1)./255;
+    gs = im(:,:,2)./255;
+    bs = im(:,:,3)./255;
+    
+    [hs, ss, vs] = rgb2hsv([rs,gs,bs]);
+    
+    mode_r = mode(rs(:));
+    mode_g = mean(gs(:));
+    mode_b = mean(bs(:));
+    
+
+    mean_hsv = rgb2hsv([mean_r, mean_g, mean_b]);
+
+end

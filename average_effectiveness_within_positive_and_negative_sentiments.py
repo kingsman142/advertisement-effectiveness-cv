@@ -11,6 +11,7 @@ sentiments_list = ["active", "afraid", "alarmed", "alert", "amazed", "amused", "
 
 positive_sentiments = ["active", "amazed", "amused", "cheerful", "confident", "eager", "grateful", "inspired", "loving", "proud", "youthful"]
 negative_sentiments = ["afraid", "angry", "disturbed", "jealous", "pessimistic", "sad"]
+neutral_sentiments = [sent for sent in sentiments_list if not sent in positive_sentiments and not sent in negative_sentiments]
 
 with open(VIDEO_EFFECTIVE_RAW_FILE, 'r') as video_effective_data:
     data = video_effective_data.read()
@@ -32,6 +33,8 @@ positive_sentiments_sum = 0
 positive_sentiments_count = 0
 negative_sentiment_sum = 0
 negative_sentiment_count = 0
+neutral_sentiments_sum = 0
+neutral_sentiments_count = 0
 
 for video_id, ratings in effective_data.items():
     ratings = np.array(ratings).astype(int) # Convert the list from strings to integers
@@ -46,6 +49,9 @@ for video_id, ratings in effective_data.items():
     elif video_sentiment in negative_sentiments:
         negative_sentiment_sum += ratings_mean
         negative_sentiment_count += 1
+    elif video_sentiment in neutral_sentiments:
+        neutral_sentiments_sum += ratings_mean
+        neutral_sentiments_count += 1
 
 if positive_sentiments_count == 0:
     print("Average positive sentiment effectiveness rating: N/A")
@@ -56,3 +62,8 @@ if negative_sentiment_count == 0:
     print("Average negative sentiment effectiveness rating: N/A")
 else:
     print("Average negative sentiment effectiveness rating: %.2f" % (negative_sentiment_sum/negative_sentiment_count))
+
+if neutral_sentiments_count == 0:
+    print("Average neutral sentiment effectiveness rating: N/A")
+else:
+    print("Average neutral sentiment effectiveness rating: %.2f" % (neutral_sentiments_sum/neutral_sentiments_count))
