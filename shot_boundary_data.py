@@ -2,8 +2,11 @@ import glob
 import os
 import json
 import numpy as np
+<<<<<<< HEAD
 from scipy.stats import pearsonr
 from sklearn.svm import SVC
+=======
+>>>>>>> 056c15771e5223023898d904f3fe208527ab9394
 
 VIDEO_EFFECTIVE_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Effective_clean.json"
 VIDEO_DURATION_RAW_FILE = "video_Duration_raw.json"
