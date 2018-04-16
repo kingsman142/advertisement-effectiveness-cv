@@ -6,12 +6,29 @@ import matplotlib.pyplot as plt
 
 import requests
 import json
+import glob
+from moviepy.editor import VideoFileClip
+
+def extract_video_id(filename, batch_num):
+    return filename.split("./batch" + batch_num)[1].split(".3gp")[0][1:]
+
+# Closes a video file clip
+def close_clip(clip):
+    try:
+        clip.reader.close()
+        del clip.reader
+        if clip.audio != None:
+            clip.audio.reader.close_proc()
+            del clip.audio
+        del clip
+    except Exception as e:
+        sys.exc_clear()
 
 SET_UP_DATA = False # Set this to true if you don't have video_Duration_raw.json and need to send the API requests to get video duration data
 if SET_UP_DATA:
     API_KEY = "YOUR_API_KEY_HERE" # Please change this if you plan on making requests to the Youtube API
 else:
-    VIDEO_DURATION_RAW_FILE = "video_Duration_raw.json"
+    VIDEO_DURATION_RAW_FILE = "video_Duration_new_raw.json"
 VIDEO_EFFECTIVE_RAW_FILE = "./annotations_videos/video/raw_result/video_Effective_raw.json"
 
 def convert_duration_to_int(duration_str): # Duration string comes in format PTxMyS where x is the number of minutes and y is seconds
@@ -37,6 +54,18 @@ if SET_UP_DATA:
 else:
     youtube_data_duration = dict(duration_data)
 
+effective_data_keys = effective_data.keys()
+
+batch1_filenames = glob.glob("./batch1/*.3gp")
+batch1_filenames = [filename for filename in batch1_filenames if extract_video_id(filename, "1") in effective_data_keys]
+batch1_ids = [extract_video_id(filename, "1") for filename in batch1_filenames]
+
+batch2_filenames = glob.glob("./batch2/*.3gp")
+batch2_filenames = [filename for filename in batch2_filenames if extract_video_id(filename, "2") in effective_data_keys]
+batch2_ids = [extract_video_id(filename, "2") for filename in batch2_filenames]
+batch2_ids = [id for id in batch2_ids if id not in batch1_ids]
+
+i = 0
 for video_id, ratings in effective_data.items():
     ratings = np.array(ratings).astype(int) # Convert the list from strings to integers
     ratings_mean = np.mean(ratings)
@@ -44,13 +73,17 @@ for video_id, ratings in effective_data.items():
     effective_data_stats[video_id] = ratings_mean
 
     if SET_UP_DATA:
-        youtube_data = requests.get("https://www.googleapis.com/youtube/v3/videos", params = {'key': API_KEY, 'id': video_id, 'part': 'contentDetails'})
-        youtube_data_json = youtube_data.json()
-        if 'items' in youtube_data_json:
-            if len(youtube_data_json['items']) > 0:
-                duration_string = youtube_data_json['items'][0]['contentDetails']['duration']
-                duration = convert_duration_to_int(duration_string)
-                youtube_data_duration[video_id] = duration
+        clip = None
+        if video_id in batch1_ids:
+            clip = VideoFileClip("./batch1/" + video_id + ".3gp")
+        elif video_id in batch2_ids:
+            clip = VideoFileClip("./batch2/" + video_id + ".3gp")
+        length = clip.duration
+        close_clip(clip)
+        youtube_data_duration[video_id] = int(round(length))
+        i += 1
+        if i % 100 == 0:
+            print(i)
 
 # Calculate the correlation between number of language and average ratings
 video_ids = effective_data_stats.keys()
@@ -60,7 +93,7 @@ correlation = pearsonr(effective_ratings, duration_times)[0]
 
 # NOTE: This commented code saves the duration data to a JSON file.  This should only be run once and only when you do not already possess the JSON file.
 if SET_UP_DATA:
-    with open('video_Duration_raw.json', 'w') as duration_file:
+    with open('video_Duration_new_raw.json', 'w') as duration_file:
         json.dump(youtube_data_duration, duration_file)
 
 print("Number of video ids: %d" % (len(video_ids)))
