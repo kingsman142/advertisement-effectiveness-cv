@@ -4,7 +4,7 @@ from sklearn import svm
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
-import pickle as cPickle
+import pickle
 from sklearn import metrics
 from pprint import pprint
 import json
@@ -15,9 +15,8 @@ path = "./"
 feature_size = 4096
 target = sys.argv[1]
 
-#with open(os.path.join(path, 'average_fc7_features.pkl'), 'rb') as fp:
-with open('average_fc7_features.pkl', 'rb') as fp:
-    data = cPickle.load(fp, encoding="bytes")
+with open("./average_fc7_features.pkl.txt", "rb") as fp:
+    data = pickle.load(fp, encoding='bytes')
 
 with open(os.path.join(path, 'train_2087.txt'), 'r') as fp:
     train_id = fp.read().rstrip().split()
@@ -48,7 +47,7 @@ def loadLabel(label, threshold=0.7):
   return mapping
 
 def loadJsonLabel(label):
-  with open('video_%s_clean.json' % label, 'r') as fp:
+  with open('./annotations_videos/video/cleaned_result/video_%s_clean.json' % label, 'r') as fp:
     content = json.load(fp)
   return content
 
@@ -66,7 +65,8 @@ test_y.fill(np.nan)
 i = 0
 for vid in train_id:
   if vid in labels:
-    train_X[i, :] = data[vid]
+    vid_id = str.encode(vid)
+    train_X[i, :] = data[vid_id]
     train_y[i] = labels[vid] - 1
     i += 1
 
@@ -76,7 +76,8 @@ train_y = train_y[:i]
 j = 0
 for vid in test_id:
   if vid in labels:
-    test_X[j, :] = data[vid]
+    vid_id = str.encode(vid)
+    test_X[j, :] = data[vid_id]
     test_y[j] = labels[vid] - 1
     j += 1
 
