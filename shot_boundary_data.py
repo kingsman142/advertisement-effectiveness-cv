@@ -3,12 +3,32 @@ import os
 import json
 import numpy as np
 import math
+import collections
 from scipy.stats import pearsonr
 from sklearn.svm import SVC
 
 VIDEO_EFFECTIVE_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Effective_clean.json"
 VIDEO_DURATION_RAW_FILE = "./video_Duration_new_raw.json"
 SB_DIR = "./SB-Youtube-5k/"
+
+def balance_classes(x, y):
+    samples = {1: [], 2: [], 3: [], 4: [], 5: []}
+    for i in range(len(x)):
+        samples[y[i]].append(x[i][0])
+    min_class = min(len(samples[1]), len(samples[2]), len(samples[3]), len(samples[4]), len(samples[5]))
+    one = np.random.choice(samples[1], min_class, replace = False).tolist()
+    two = np.random.choice(samples[2], min_class, replace = False).tolist()
+    three = np.random.choice(samples[3], min_class, replace = False).tolist()
+    four = np.random.choice(samples[4], min_class, replace = False).tolist()
+    five = np.random.choice(samples[5], min_class, replace = False).tolist()
+    new_list = one + two + three + four + five
+    new_list_output = [1]*min_class + [2]*min_class + [3]*min_class + [4]*min_class + [5]*min_class
+    indices = [i for i in range(len(new_list))]
+    np.random.shuffle(indices)
+    output_items = [new_list[item] for item in indices]
+    output_labels = [new_list_output[item] for item in indices]
+    output_items = [[item] for item in output_items]
+    return output_items, output_labels
 
 def calculate_entropy(num_peaks, duration):
     p_0 = (duration - num_peaks)/duration
@@ -30,7 +50,7 @@ shot_boundary_counts = {}
 entropy = {}
 
 for filename in shot_boundary_files:
-    video_id = filename.split("/")[1].split("\\")[1].split(".")[0]
+    video_id = filename.split("/")[2].split(".")[0]
     if video_id not in duration_data:
         continue
     num_scene_changes = sum(1 for line in open(filename, "r"))
@@ -126,6 +146,11 @@ binary_clf.fit(binary_train_x, binary_train_y)
 pentary_clf = SVC()
 pentary_train_x = shots_avg_vids[0: int(.8*len(shots_avg_vids))]
 pentary_train_y = pentary_labels[0: int(.8*len(pentary_labels))]
+class_counts = collections.Counter(pentary_train_y)
+print(class_counts)
+pentary_train_x, pentary_train_y = balance_classes(pentary_train_x, pentary_train_y)
+class_counts = collections.Counter(pentary_train_y)
+print(class_counts)
 pentary_test_x = shots_avg_vids[int(.8*len(shots_avg_vids)):]
 pentary_test_y = pentary_labels[int(.8*len(pentary_labels)):]
 pentary_clf.fit(pentary_train_x, pentary_train_y)

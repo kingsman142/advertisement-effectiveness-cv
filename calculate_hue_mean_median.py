@@ -58,6 +58,7 @@ median_hue = {}
 
 i = 0
 for video_id in effective_data.keys():
+    avg_red, avg_green, avg_blue, median_red, median_green, median_blue = 0.0
     if video_id in batch1_ids:
         avg_red, avg_green, avg_blue, median_red, median_green, median_blue = calc_video_hue(video_id, "1")
         #average_intensities[video_id] = (avg_intensity / j)

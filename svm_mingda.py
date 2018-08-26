@@ -15,7 +15,7 @@ path = "./"
 feature_size = 4096
 target = sys.argv[1]
 
-with open("./average_fc7_features.pkl.txt", "rb") as fp:
+with open("./average_fc7_features.pkl", "rb") as fp:
     data = pickle.load(fp, encoding='bytes')
 
 with open(os.path.join(path, 'train_2087.txt'), 'r') as fp:
@@ -101,7 +101,7 @@ print('data loaded.')
 # results = {}
 
 # for C in Cs:
-C = 15
+C = 100
 clf = svm.SVC(decision_function_shape='ovr', C=C)
 
 print('C: %f' % C)

@@ -17,6 +17,15 @@ def calc_video_avg_intensity(video_id, batch_num):
         #img = misc.imread("./batch1-frames/" + video_id + str(j) + ".jpg", 'L')
         #avg_intensity += calc_avg_intensity(img)
         img = io.imread(base_filename + str(j) + ".jpg", as_grey = True)
+        center = (int(img.shape[0]/2), int(img.shape[1]/2))
+        crop_x_size = int(img.shape[1] * 0.3 / 2)
+        crop_y_size = int(img.shape[0] * 0.3 / 2)
+        x_min = center[1] - crop_x_size
+        x_max = center[1] + crop_x_size
+        y_min = center[0] - crop_y_size
+        y_max = center[0] + crop_y_size
+        #print("center: %s, crop_x: %d, crop_y: %d, shape: %s" % (center, crop_x_size, crop_y_size, img.shape))
+        img = img[y_min : y_max, x_min : x_max]
         avg_intensity += np.mean(img)
         j += 1
     return (avg_intensity / j)
@@ -41,14 +50,14 @@ i = 0
 for video_id in effective_data.keys():
     if video_id in batch1_ids:
         avg_intensity = calc_video_avg_intensity(video_id, "1")
-        average_intensities[video_id] = (avg_intensity / j)
+        average_intensities[video_id] = avg_intensity
     elif video_id in batch2_ids:
         avg_intensity = calc_video_avg_intensity(video_id, "2")
-        average_intensities[video_id] = (avg_intensity / j)
+        average_intensities[video_id] = avg_intensity
     #print("%s: %.3f" % (video_id, average_intensities[video_id]))
     i += 1
     if i % 100 == 0:
         print(i)
 
-with open("video_average_intensities.json", "w+") as avg_intensity_file:
+with open("video_average_intensities_cropped_30percent.json", "w+") as avg_intensity_file:
     avg_intensity_file.write(json.dumps(average_intensities))

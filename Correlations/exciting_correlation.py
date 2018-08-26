@@ -48,7 +48,7 @@ logress_score = exciting_logregress.score(exciting_test, effective_test)
 print("Logistic Regression Score: %.4f" % (logress_score))
 exciting_pred = exciting_logregress.predict(exciting_test)
 pickle.dump(exciting_logregress, open("exciting_logregress.pkl", "wb+"))
-with open("log_regress_x.txt", )
+#with open("log_regress_x.txt", )
 
 print("Number of video ids: %d" % (len(video_ids)))
 print("Correlation between exciting and effectiveness rating: %.3f" % (correlation))

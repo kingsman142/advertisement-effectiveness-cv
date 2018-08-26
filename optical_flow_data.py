@@ -15,7 +15,7 @@ optical_flow_files = glob.glob(OF_DIR + "*.txt")
 optical_flow = {}
 
 for filename in optical_flow_files:
-    video_id = filename.split("/")[1].split("\\")[1].split(".")[0]
+    video_id = filename.split("/")[2].split(".")[0]
     if video_id not in effective_data:
         continue
     of_vectors = open(filename, "r").readlines() # of = 'Optical Flow' vectors
