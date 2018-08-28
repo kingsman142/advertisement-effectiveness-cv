@@ -15,32 +15,34 @@ def extract_video_id(filename, batch_num):
     return filename.split("./batch" + batch_num)[1].split(".3gp")[0][1:]
 
 def find_text(ids, base_dir):
+    curr_id_num = 0
     for id in ids:
         i = 0
         video_text_data = []
         while True:
             curr_frame_filename = "./" + base_dir + "/" + id + "-" + str(i) + ".jpg"
-            if not os.exists(curr_frame_filename):
+            if not os.path.exists(curr_frame_filename):
                 break
             with open(curr_frame_filename, "rb") as curr_frame:
                 image_data = curr_frame.read()
                 image = types.Image(content=image_data)
                 response = client.text_detection(image=image)
                 texts = response.text_annotations
-                print('Texts:')
 
                 for text in texts:
-                    text = text.description
+                    text_description = text.description
                     x = text.bounding_poly.vertices[0].x
                     y = text.bounding_poly.vertices[0].y
                     width = text.bounding_poly.vertices[2].x - x
                     height = text.bounding_poly.vertices[2].y - y
                     bounding_box = [x, y, width, height]
-                    text_data = [text, bounding_box]
+                    text_data = [text_description, bounding_box]
                     video_text_data.append(text_data)
-            i += 1
-        print("id: %s, data: %s" % (id, video_text_data))
+            i += 45
         OCR_DATA[id] = video_text_data
+        if curr_id_num % 100 == 0:
+            print(curr_id_num)
+        curr_id_num += 1
 
 effective_data_keys = effective_data.keys()
 

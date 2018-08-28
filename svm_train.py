@@ -3,9 +3,9 @@ import numpy as np
 from scipy.stats import pearsonr
 import scipy.stats
 from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
+from sklearn.svm import SVC, SVR
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, LinearRegression
 import math
 import collections
 from sklearn.preprocessing import normalize
@@ -439,6 +439,7 @@ print("predictions test counts: %s" % predictions_test_counts)
 predictions_sub_train = [[], [], [], [], [], [], [], [], [], []]
 #predictions_sub_train = []
 predictions_sub_out = [[], [], [], [], [], [], [], [], [], []]
+
 for sample in test_ids:
     sample_index = test_ids.index(sample)
     topics_svm_class = topics_pred[sample_index]
@@ -487,7 +488,11 @@ for sample in test_ids:
 
     if sample in predictions_train:
         predictions_sub = [sents_svm_class, topics_svm_class, opflow_svm_class, cropped_30_class, mem_svm_class, med_hue_svm_class, topics_dt_class, sents_dt_class, cropped_60_class, avg_hue_svm_class]
+        #predictions = [predictions_sub_clfs[0].predict(predictions_sub[0])[0], predictions_sub_clfs[1].predict(predictions_sub[1])[0], predictions_sub_clfs[2].predict(predictions_sub[2])[0], predictions_sub_clfs[3].predict(predictions_sub[3])[0], predictions_sub_clfs[4].predict(predictions_sub[4])[0], predictions_sub_clfs[5].predict(predictions_sub[5])[0], predictions_sub_clfs[6].predict(predictions_sub[6])[0], predictions_sub_clfs[7].predict(predictions[7])[0], predictions_sub_clfs[8].predict(predictions_sub[8])[0], predictions_sub_clfs[9].predict(predictions_sub[9])[0]]
+        #print(predictions)
+        #predictions = [(0 if sents_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if topics_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if opflow_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if cropped_30_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if mem_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if med_hue_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if topics_dt_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if sents_dt_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if cropped_60_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if avg_hue_svm_class == true_label else 1) + (random.random() - 0.5)*.6]
         predictions = [0 if sents_svm_class == true_label else 1, 0 if topics_svm_class == true_label else 1, 0 if opflow_svm_class == true_label else 1, 0 if cropped_30_class == true_label else 1, 0 if mem_svm_class == true_label else 1, 0 if med_hue_svm_class == true_label else 1, 0 if topics_dt_class == true_label else 1, 0 if sents_dt_class == true_label else 1, 0 if cropped_60_class == true_label else 1, 0 if avg_hue_svm_class == true_label else 1]
+        #print(predictions)
         predictions_sub_out[0].append(predictions[0])
         predictions_sub_out[1].append(predictions[1])
         predictions_sub_out[2].append(predictions[2])
@@ -525,6 +530,7 @@ for sample in test_ids:
 predictions_clf = SVC()
 predictions_clf.fit(predictions_in, predictions_out)
 predictions_sub_clfs = [SVC(), SVC(), SVC(), SVC(), SVC(), SVC(), SVC(), SVC(), SVC(), SVC()]
+#predictions_sub_clfs = [LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression()]
 for i in range(len(predictions_sub_clfs)):
     predictions_sub_clfs[i].fit(predictions_sub_train[i], predictions_sub_out[i])
 print("Combiner accuracy: %.4f (%d correct, %d total)" % (correct/total, correct, total))
