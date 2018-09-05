@@ -29,6 +29,7 @@ AVG_HUE_FILE = "./video_average_hue_normalized.json"
 MED_HUE_FILE = "./video_median_hue_normalized.json"
 EXCITING_FILE = "./video_Exciting_clean.json"
 DURATION_FILE = "./video_Duration_new_raw.json"
+VIDEO_OCR_STATS_FILE = "./video_ocr_stats.json"
 NUM_SENTIMENTS = 30
 NUM_TOPICS = 38
 TOPICS = ["restaurant", "chocolate", "chips", "seasoning", "petfood", "alcohol", "coffee", "soda", "cars", "electronics", "phone_tv_internet_providers", "financial", "education", "security", "software", "other_service", "beauty", "healthcare", "clothing", "baby", "game", "cleaning", "home_improvement", "home_appliance", "travel", "media", "sports", "shopping", "gambling", "environment", "animal_right", "human_right", "safety", "smoking_alcohol_abuse", "domestic_violence", "self_esteem", "political", "charities"]
@@ -214,6 +215,10 @@ with open(DURATION_FILE, "r") as dur_data:
     data = dur_data.read()
     duration_data = json.loads(data)
 
+with open(VIDEO_OCR_STATS_FILE, "r") as video_ocr_data:
+    data = video_ocr_data.read()
+    ocr_data = json.loads(data)
+
 effective_data_stats = dict(effective_data) # Make a copy of the data that holds the standard deviation for each video's ratings
 sentiments_data_stats = dict(sentiments_data) # Make a copy
 topics_data_stats = dict(topics_data) # Make a copy
@@ -390,6 +395,41 @@ test_duration = [[duration_data[x]] for x in test_ids]
 duration_pred = duration_SVM.predict(test_duration)
 print("Duration SVM score: %.4f" % (duration_SVM.score(test_duration, test_out)))
 
+text_length_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
+train_text_length = [[ocr_data[x][0]] for x in train_ids]
+text_length_SVM.fit(train_text_length, train_out)
+test_text_length = [[ocr_data[x][0]] for x in test_ids]
+text_length_pred = text_length_SVM.predict(test_text_length)
+print("Text Length SVM score: %.4f" % (text_length_SVM.score(test_text_length, test_out)))
+
+meaningful_words_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
+train_meaningfulness = [[ocr_data[x][1]] for x in train_ids]
+meaningful_words_SVM.fit(train_meaningfulness, train_out)
+test_meaningfulness = [[ocr_data[x][1]] for x in test_ids]
+meaningfulness_pred = meaningful_words_SVM.predict(test_meaningfulness)
+print("Meaningful Words SVM score: %.4f" % (meaningful_words_SVM.score(test_meaningfulness, test_out)))
+
+avg_word_len_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
+train_avg_word_len = [[ocr_data[x][2]] for x in train_ids]
+avg_word_len_SVM.fit(train_avg_word_len, train_out)
+test_avg_word_len = [[ocr_data[x][2]] for x in test_ids]
+avg_word_len_pred = avg_word_len_SVM.predict(test_avg_word_len)
+print("Avg. Word Len SVM score: %.4f" % (avg_word_len_SVM.score(test_avg_word_len, test_out)))
+
+sent_anal_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
+train_sent_anal = [ocr_data[x][3] for x in train_ids]
+sent_anal_SVM.fit(train_sent_anal, train_out)
+test_sent_anal = [ocr_data[x][3] for x in test_ids]
+sent_anal_pred = sent_anal_SVM.predict(test_sent_anal)
+print("Text Sentiment Analysis SVM score: %.4f" % (sent_anal_SVM.score(test_sent_anal, test_out)))
+
+text_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
+train_text = [[train_text_length[i][0], train_meaningfulness[i][0], train_avg_word_len[i][0], train_sent_anal[i][0], train_sent_anal[i][1], train_sent_anal[i][2]] for i in range(len(train_ids))]
+text_SVM.fit(train_text, train_out)
+test_text = [[test_text_length[i][0], test_meaningfulness[i][0], test_avg_word_len[i][0], test_sent_anal[i][0], test_sent_anal[i][1], test_sent_anal[i][2]] for i in range(len(test_ids))]
+text_pred = text_SVM.predict(test_text)
+print("Text SVM score: %.4f" % (text_SVM.score(test_text, test_out)))
+
 print(train_mem[0], train_opflow[0], train_cropped_30[0], train_avg_hue[0])
 x = [list(train_topics[i]) + list(train_sents[i]) + train_mem[i] + train_opflow[i] + train_cropped_30[i] + train_cropped_60[i] + train_avg_hue[i] + train_med_hue[i] + train_exciting[i] for i in range(len(train_ids))]
 total_SVM = SVC(kernel = 'rbf', decision_function_shape='ovr', C=1)
@@ -417,6 +457,17 @@ med_hue_topics_correct = np.zeros(38)
 med_hue_sents_correct = np.zeros(30)
 cropped_60_topics_correct = np.zeros(38)
 cropped_60_sents_correct = np.zeros(30)
+
+text_len_topics_correct = np.zeros(38)
+text_len_sents_correct = np.zeros(30)
+meaningfulness_topics_correct = np.zeros(38)
+meaningfulness_sents_correct = np.zeros(30)
+avg_word_len_topics_correct = np.zeros(38)
+avg_word_len_sents_correct = np.zeros(30)
+sent_anal_topics_correct = np.zeros(38)
+sent_anal_sents_correct = np.zeros(30)
+duration_topics_correct = np.zeros(38)
+duration_sents_correct = np.zeros(30)
 
 correct = 0
 total = 0
@@ -454,6 +505,10 @@ for sample in test_ids:
     cropped_60_class = cropped_60_SVM_pred[sample_index]
     exciting_class = exciting_pred[sample_index]
     total_svm_class = total_SVM_pred[sample_index]
+    text_length_class = text_length_pred[sample_index]
+    meaningful_words_class = meaningfulness_pred[sample_index]
+    avg_word_len_class = avg_word_len_pred[sample_index]
+    sent_anal_class = sent_anal_pred[sample_index]
     duration_class = duration_pred[sample_index]
     true_label = test_out[sample_index]
     predicted_class = -1
@@ -483,6 +538,21 @@ for sample in test_ids:
     if cropped_60_class == true_label:
         cropped_60_topics_correct[topic] += 1
         cropped_60_sents_correct[sent] += 1
+    if text_length_class == true_label:
+        text_len_topics_correct[topic] += 1
+        text_len_sents_correct[sent] += 1
+    if meaningful_words_class == true_label:
+        meaningfulness_topics_correct[topic] += 1
+        meaningfulness_sents_correct[sent] += 1
+    if avg_word_len_class == true_label:
+        avg_word_len_topics_correct[topic] += 1
+        avg_word_len_sents_correct[sent] += 1
+    if sent_anal_class == true_label:
+        sent_anal_topics_correct[topic] += 1
+        sent_anal_sents_correct[sent] += 1
+    if duration_class == true_label:
+        duration_topics_correct[topic] += 1
+        duration_sents_correct[sent] += 1
     topics_totals[topic] += 1
     sents_totals[sent] += 1
 
@@ -540,6 +610,16 @@ opflow_topics_correct = np.array([opflow_topics_correct[i] / topics_totals[i] fo
 opflow_sents_correct = np.array([opflow_sents_correct[i] / sents_totals[i] for i in range(30)])
 cropped_topics_correct = np.array([cropped_topics_correct[i] / topics_totals[i] for i in range(38)])
 cropped_sents_correct = np.array([cropped_sents_correct[i] / sents_totals[i] for i in range(30)])
+text_len_topics_correct = np.array([text_len_topics_correct[i] / topics_totals[i] for i in range(38)])
+text_len_sents_correct = np.array([text_len_sents_correct[i] / sents_totals[i] for i in range(30)])
+meaningfulness_topics_correct = np.array([meaningfulness_topics_correct[i] / topics_totals[i] for i in range(38)])
+meaningfulness_sents_correct = np.array([meaningfulness_sents_correct[i] / sents_totals[i] for i in range(30)])
+avg_word_len_topics_correct = np.array([avg_word_len_topics_correct[i] / topics_totals[i] for i in range(38)])
+avg_word_len_sents_correct = np.array([avg_word_len_sents_correct[i] / sents_totals[i] for i in range(30)])
+sent_anal_topics_correct = np.array([sent_anal_topics_correct[i] / topics_totals[i] for i in range(38)])
+sent_anal_sents_correct = np.array([sent_anal_sents_correct[i] / sents_totals[i] for i in range(30)])
+duration_topics_correct = np.array([duration_topics_correct[i] / topics_totals[i] for i in range(38)])
+duration_sents_correct = np.array([duration_sents_correct[i] / sents_totals[i] for i in range(30)])
 topics_correct = np.array([topics_correct[i] / topics_totals[i] for i in range(38)])
 sents_correct = np.array([sents_correct[i] / sents_totals[i] for i in range(30)])
 
@@ -551,18 +631,24 @@ med_hue_topics_correct = np.array([med_hue_topics_correct[i] / topics_totals[i] 
 med_hue_sents_correct = np.array([med_hue_sents_correct[i] / sents_totals[i] for i in range(30)])
 cropped_60_topics_correct = np.array([cropped_60_topics_correct[i] / topics_totals[i] for i in range(38)])
 cropped_60_sents_correct = np.array([cropped_60_sents_correct[i] / sents_totals[i] for i in range(30)])
-print(sents_svm_correct)
+'''print(sents_svm_correct)
 print(topics_svm_correct)
 print(opflow_topics_correct)
 print(opflow_sents_correct)
 print(cropped_topics_correct)
 print(cropped_sents_correct)
+print(text_len_topics_correct)
+print(text_len_sents_correct)
+print(sent_anal_topics_correct)
+print(sent_anal_sents_correct)
+print(duration_topics_correct)
+print(duration_sents_correct)
 print("\n\n")
 print(topics_totals)
 print(sents_totals)
 print("\n\n")
 print(topics_correct)
-print(sents_correct)
+print(sents_correct)'''
 for i in range(len(topics_correct)):
     if topics_correct[i] < correct/total:
         print("Topic %s" % TOPICS[i-1])
@@ -588,6 +674,10 @@ for sample in test_ids:
     med_hue_svm_class = med_hue_SVM_pred[sample_index]
     cropped_30_class = cropped_30_SVM_pred[sample_index]
     cropped_60_class = cropped_60_SVM_pred[sample_index]
+    text_length_class = text_length_pred[sample_index]
+    meaningful_words_class = meaningfulness_pred[sample_index]
+    avg_word_len_class = avg_word_len_pred[sample_index]
+    sent_anal_class = sent_anal_pred[sample_index]
     true_label = test_out[sample_index]
     predicted_class = -1
 
@@ -598,7 +688,7 @@ for sample in test_ids:
     if sample in predictions_test:
         predictions_sub_test = [topics_svm_class, sents_svm_class, topics_dt_class, sents_dt_class, mem_svm_class, opflow_svm_class, avg_hue_svm_class, med_hue_svm_class, cropped_30_class, cropped_60_class]
         predictions_sub = [predictions_sub_clfs[0].predict(predictions_sub_test[0])[0], predictions_sub_clfs[1].predict(predictions_sub_test[1])[0], predictions_sub_clfs[2].predict(predictions_sub_test[2])[0], predictions_sub_clfs[3].predict(predictions_sub_test[3])[0], predictions_sub_clfs[4].predict(predictions_sub_test[4])[0], predictions_sub_clfs[5].predict(predictions_sub_test[5])[0], predictions_sub_clfs[6].predict(predictions_sub_test[6])[0], predictions_sub_clfs[7].predict(predictions_sub_test[7])[0], predictions_sub_clfs[8].predict(predictions_sub_test[8])[0], predictions_sub_clfs[9].predict(predictions_sub_test[9])[0]]
-        print(predictions_sub)
+        #print(predictions_sub)
         #predictions = [0 if sents_svm_class == true_label else 1, 0 if topics_svm_class == true_label else 1, 0 if opflow_svm_class == true_label else 1, 0 if cropped_30_class == true_label else 1, 0 if mem_svm_class == true_label else 1, 0 if med_hue_svm_class == true_label else 1, 0 if topics_dt_class == true_label else 1, 0 if sents_dt_class == true_label else 1, 0 if cropped_60_class == true_label else 1, 0 if avg_hue_svm_class == true_label else 1]
         predicted_label = predictions_clf.predict([predictions_sub])
         if predicted_label == true_label:
@@ -609,10 +699,10 @@ for sample in test_ids:
             #print("sample: %s, predicted: %d, ground-truth: %d" % (sample, predicted_label, true_label))
         predictions_total += 1
 
-    sents_scores = [sents_svm_correct[sent], opflow_sents_correct[sent], cropped_sents_correct[sent], sents_dt_correct[sent], mem_sents_correct[sent], med_hue_sents_correct[sent]]
-    topics_scores = [topics_svm_correct[topic], opflow_topics_correct[topic], cropped_topics_correct[topic], topics_dt_correct[topic], mem_topics_correct[topic], med_hue_topics_correct[topic]]
+    sents_scores = [sents_svm_correct[sent], opflow_sents_correct[sent], cropped_sents_correct[sent], sents_dt_correct[sent], mem_sents_correct[sent], med_hue_sents_correct[sent], duration_sents_correct[sent]]
+    topics_scores = [topics_svm_correct[topic], opflow_topics_correct[topic], cropped_topics_correct[topic], topics_dt_correct[topic], mem_topics_correct[topic], med_hue_topics_correct[topic], duration_topics_correct[sent]]
     #classes = [sents_svm_class, topics_svm_class, opflow_svm_class, cropped_30_class]
-    classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class]
+    classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class]
     high_sents_index = 0
     high_topics_index = 0
     for i in range(len(sents_scores)):
