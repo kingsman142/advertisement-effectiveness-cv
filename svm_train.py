@@ -14,6 +14,7 @@ from scipy.stats import mode
 import warnings
 import random
 import matplotlib.pyplot as plt
+from collections import Counter
 warnings.filterwarnings("ignore")
 np.set_printoptions(precision=3)
 
@@ -30,10 +31,13 @@ MED_HUE_FILE = "./video_median_hue_normalized.json"
 EXCITING_FILE = "./video_Exciting_clean.json"
 DURATION_FILE = "./video_Duration_new_raw.json"
 VIDEO_OCR_STATS_FILE = "./video_ocr_stats.json"
+VIDEO_OCR_WORDS_FILE = "./video_ocr_data_clean_words.json"
 NUM_SENTIMENTS = 30
 NUM_TOPICS = 38
 TOPICS = ["restaurant", "chocolate", "chips", "seasoning", "petfood", "alcohol", "coffee", "soda", "cars", "electronics", "phone_tv_internet_providers", "financial", "education", "security", "software", "other_service", "beauty", "healthcare", "clothing", "baby", "game", "cleaning", "home_improvement", "home_appliance", "travel", "media", "sports", "shopping", "gambling", "environment", "animal_right", "human_right", "safety", "smoking_alcohol_abuse", "domestic_violence", "self_esteem", "political", "charities"]
 SENTIMENTS = ["active", "afraid", "alarmed", "alert", "amazed", "amused", "angry", "calm", "cheerful", "confident", "conscious", "creative", "disturbed", "eager", "educated", "emotional", "empathetic", "fashionable", "feminine", "grateful", "inspired", "jealous", "loving", "manly", "persuaded", "pessimistic", "proud", "sad", "thrifty", "youthful"]
+useless_words = ["a", "of", "the", "to", "on", "with", "your", "is", "for", "this", "in", "how", "by", "and", "it", "you", "i", "e", "ry", "an", "not", "s", "its", "what", "are", "get", "be", "o", "at", "have", "as", "no", "do", "am", "me", "de", "my", "am", "wwwesrborg", "ed", "has", "int", "th", "com", "that", "who", "st", "y", "co", "ism", "ma", "sec", "knorr", "presents", "us", "n", "c", "l", "f", "tm", "al", "x", "v", "d", "el"]
+useless_words += ["ourselves", "hers", "between", "yourself", "but", "again", "there", "about", "once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its", "yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from", "him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don", "nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above", "both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and", "been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why", "so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only", "myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a", "by", "doing", "it", "how", "further", "was", "here", "than"]
 
 def normalize_data_binary(names, labels, stats):
     topics_0_1 = {0: [], 1: []}
@@ -151,6 +155,45 @@ def normalize(ids, labels, counts, ratings_range):
         output_video_labels += out_labels
     return output_video_ids
 
+def find_most_common_words(train_ids):
+    most_common_words_master = {}
+    for id in train_ids:
+        video_text_data = ocr_data_clean[id]
+        for word in video_text_data:
+            if word in most_common_words_master:
+                most_common_words_master[word] += 1
+            elif not word in useless_words:
+                most_common_words_master[word] = 1
+    most_common_counter = Counter(most_common_words_master)
+    most_common_words_master = []
+    for word, count in most_common_counter.most_common(100): # grab top 50 words
+        most_common_words_master.append(word)
+    return most_common_words_master
+
+def get_word_count_train_test(train_ids, test_ids):
+    most_common_words_master = find_most_common_words(train_ids)
+    word_count_train_in = []
+    word_count_test_in = []
+    for id in train_ids:
+        video_text_data = ocr_data_clean[id]
+        word_count = []
+        for word in most_common_words_master:
+            if word in video_text_data:
+                word_count.append(1)
+            else:
+                word_count.append(0)
+        word_count_train_in.append(word_count)
+    for id in test_ids:
+        video_text_data = ocr_data_clean[id]
+        word_count = []
+        for word in most_common_words_master:
+            if word in video_text_data:
+                word_count.append(1)
+            else:
+                word_count.append(0)
+        word_count_test_in.append(word_count)
+    return word_count_train_in, word_count_test_in
+
 with open(VIDEO_EFFECTIVE_RAW_FILE, 'r') as video_effective_data:
     data = video_effective_data.read()
     effective_data = json.loads(data)
@@ -218,6 +261,9 @@ with open(DURATION_FILE, "r") as dur_data:
 with open(VIDEO_OCR_STATS_FILE, "r") as video_ocr_data:
     data = video_ocr_data.read()
     ocr_data = json.loads(data)
+
+with open(VIDEO_OCR_WORDS_FILE, "r") as ocr_file:
+    ocr_data_clean = json.loads(ocr_file.read())
 
 effective_data_stats = dict(effective_data) # Make a copy of the data that holds the standard deviation for each video's ratings
 sentiments_data_stats = dict(sentiments_data) # Make a copy
@@ -438,6 +484,13 @@ y = [list(test_topics[i]) + list(test_sents[i]) + test_mem[i] + test_opflow[i] +
 total_SVM_pred = total_SVM.predict(y)
 print("Total SVM score: %.4f" % (total_SVM.score(y, test_out)))
 
+word_count_train_in, word_count_test_in = get_word_count_train_test(train_ids, test_ids)
+word_count_SVC = SVC()
+word_count_SVC.fit(word_count_train_in, train_out)
+word_count_pred = word_count_SVC.predict(word_count_test_in)
+word_count_score = word_count_SVC.score(word_count_test_in, test_out)
+print("Word count SVC score: %.4f" % word_count_score)
+
 sents_svm_correct = np.zeros(30)
 topics_svm_correct = np.zeros(38)
 opflow_topics_correct = np.zeros(38)
@@ -468,6 +521,8 @@ sent_anal_topics_correct = np.zeros(38)
 sent_anal_sents_correct = np.zeros(30)
 duration_topics_correct = np.zeros(38)
 duration_sents_correct = np.zeros(30)
+word_count_topics_correct = np.zeros(38)
+word_count_sents_correct = np.zeros(30)
 
 correct = 0
 total = 0
@@ -510,6 +565,7 @@ for sample in test_ids:
     avg_word_len_class = avg_word_len_pred[sample_index]
     sent_anal_class = sent_anal_pred[sample_index]
     duration_class = duration_pred[sample_index]
+    word_count_class = word_count_pred[sample_index]
     true_label = test_out[sample_index]
     predicted_class = -1
 
@@ -553,6 +609,9 @@ for sample in test_ids:
     if duration_class == true_label:
         duration_topics_correct[topic] += 1
         duration_sents_correct[sent] += 1
+    if word_count_class == true_label:
+        word_count_topics_correct[topic] += 1
+        word_count_sents_correct[sent] += 1
     topics_totals[topic] += 1
     sents_totals[sent] += 1
 
@@ -620,6 +679,8 @@ sent_anal_topics_correct = np.array([sent_anal_topics_correct[i] / topics_totals
 sent_anal_sents_correct = np.array([sent_anal_sents_correct[i] / sents_totals[i] for i in range(30)])
 duration_topics_correct = np.array([duration_topics_correct[i] / topics_totals[i] for i in range(38)])
 duration_sents_correct = np.array([duration_sents_correct[i] / sents_totals[i] for i in range(30)])
+word_count_topics_correct = np.array([word_count_topics_correct[i] / topics_totals[i] for i in range(38)])
+word_count_sents_correct = np.array([word_count_sents_correct[i] / sents_totals[i] for i in range(30)])
 topics_correct = np.array([topics_correct[i] / topics_totals[i] for i in range(38)])
 sents_correct = np.array([sents_correct[i] / sents_totals[i] for i in range(30)])
 
@@ -678,6 +739,7 @@ for sample in test_ids:
     meaningful_words_class = meaningfulness_pred[sample_index]
     avg_word_len_class = avg_word_len_pred[sample_index]
     sent_anal_class = sent_anal_pred[sample_index]
+    word_count_class = word_count_pred[sample_index]
     true_label = test_out[sample_index]
     predicted_class = -1
 
@@ -699,10 +761,10 @@ for sample in test_ids:
             #print("sample: %s, predicted: %d, ground-truth: %d" % (sample, predicted_label, true_label))
         predictions_total += 1
 
-    sents_scores = [sents_svm_correct[sent], opflow_sents_correct[sent], cropped_sents_correct[sent], sents_dt_correct[sent], mem_sents_correct[sent], med_hue_sents_correct[sent], duration_sents_correct[sent]]
-    topics_scores = [topics_svm_correct[topic], opflow_topics_correct[topic], cropped_topics_correct[topic], topics_dt_correct[topic], mem_topics_correct[topic], med_hue_topics_correct[topic], duration_topics_correct[sent]]
+    sents_scores = [sents_svm_correct[sent], opflow_sents_correct[sent], cropped_sents_correct[sent], sents_dt_correct[sent], mem_sents_correct[sent], med_hue_sents_correct[sent], duration_sents_correct[sent], word_count_sents_correct[sent]]
+    topics_scores = [topics_svm_correct[topic], opflow_topics_correct[topic], cropped_topics_correct[topic], topics_dt_correct[topic], mem_topics_correct[topic], med_hue_topics_correct[topic], duration_topics_correct[topic], word_count_topics_correct[topic]]
     #classes = [sents_svm_class, topics_svm_class, opflow_svm_class, cropped_30_class]
-    classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class]
+    classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class]
     high_sents_index = 0
     high_topics_index = 0
     for i in range(len(sents_scores)):

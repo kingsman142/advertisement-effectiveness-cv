@@ -6,6 +6,7 @@ import os
 from sklearn.svm import SVC
 import math
 from sklearn.model_selection import train_test_split
+from collections import Counter
 
 def normalize_data_five(names, labels, stats):
     five_effectivenss_bins = {1: [], 2: [], 3: [], 4: [], 5: []} # store the data (e.g. optical flow values)
@@ -44,7 +45,7 @@ with open("./annotations_videos/video/cleaned_result/video_Effective_clean.json"
 with open("./video_ocr_data_clean_words.json", "r") as OCR_FILE:
     ocr_data_clean = json.loads(OCR_FILE.read())
 
-useless_words = ["a", "of", "the", "to", "on", "with", "your", "is", "for", "this", "in", "how", "by", "and", "it", "you", "i", "e", "ry", "an", "not", "s", "its", "what", "are", "get", "be", "o", "at", "have", "as", "no", "do", "am", "me", "de", "my", "am", "wwwesrborg", "ed", "has", "int", "th", "com", "that", "who", "st", "y", "co", "ism", "ma", "sec", "knorr", "presents", "us", "n"]
+useless_words = ["a", "of", "the", "to", "on", "with", "your", "is", "for", "this", "in", "how", "by", "and", "it", "you", "i", "e", "ry", "an", "not", "s", "its", "what", "are", "get", "be", "o", "at", "have", "as", "no", "do", "am", "me", "de", "my", "am", "wwwesrborg", "ed", "has", "int", "th", "com", "that", "who", "st", "y", "co", "ism", "ma", "sec", "knorr", "presents", "us", "n", "c", "l", "f", "tm", "al", "x", "v", "d", "el"]
 useless_words += ["ourselves", "hers", "between", "yourself", "but", "again", "there", "about", "once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its", "yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from", "him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don", "nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above", "both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and", "been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why", "so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only", "myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a", "by", "doing", "it", "how", "further", "was", "here", "than"]
 
 VIDEO_SENTIMENTS = {}
@@ -137,7 +138,47 @@ sentiments_test_in = [VIDEO_SENTIMENTS[id] for id in test_ids]
 sentiments_test_out = [effective_data[id] for id in test_ids]
 sentiments_SVC.fit(sentiments_train_in, sentiments_train_out)
 sentiments_score = sentiments_SVC.score(sentiments_test_in, sentiments_test_out)
-print("\nSentiments SVC score: %f" % sentiments_score)
+print("\nSentiments SVC score: %.4f" % sentiments_score)
+
+most_common_words_master = {}
+for id in train_ids:
+    video_text_data = ocr_data_clean[id]
+    for word in video_text_data:
+        if word in most_common_words_master:
+            most_common_words_master[word] += 1
+        elif not word in useless_words:
+            most_common_words_master[word] = 1
+most_common_counter = Counter(most_common_words_master)
+most_common_words_master = []
+for word, count in most_common_counter.most_common(100): # grab top 50 words
+    most_common_words_master.append(word)
+print(most_common_words_master)
+
+word_count_train_in = []
+word_count_test_in = []
+for id in train_ids:
+    video_text_data = ocr_data_clean[id]
+    word_count = []
+    for word in most_common_words_master:
+        if word in video_text_data:
+            word_count.append(1)
+        else:
+            word_count.append(0)
+    #print(word_count)
+    word_count_train_in.append(word_count)
+for id in test_ids:
+    video_text_data = ocr_data_clean[id]
+    word_count = []
+    for word in most_common_words_master:
+        if word in video_text_data:
+            word_count.append(1)
+        else:
+            word_count.append(0)
+    word_count_test_in.append(word_count)
+word_count_SVC = SVC()
+word_count_SVC.fit(word_count_train_in, train_out)
+word_count_score = word_count_SVC.score(word_count_test_in, test_out)
+print("Word count SVC score: %.4f" % word_count_score)
 
 with open("word_sentiments.json", "w+") as word_sentiment_file:
     word_sentiment_file.write(json.dumps(word_sentiments))
