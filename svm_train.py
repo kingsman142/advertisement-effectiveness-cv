@@ -39,7 +39,7 @@ SENTIMENTS = ["active", "afraid", "alarmed", "alert", "amazed", "amused", "angry
 useless_words = ["a", "of", "the", "to", "on", "with", "your", "is", "for", "this", "in", "how", "by", "and", "it", "you", "i", "e", "ry", "an", "not", "s", "its", "what", "are", "get", "be", "o", "at", "have", "as", "no", "do", "am", "me", "de", "my", "am", "wwwesrborg", "ed", "has", "int", "th", "com", "that", "who", "st", "y", "co", "ism", "ma", "sec", "knorr", "presents", "us", "n", "c", "l", "f", "tm", "al", "x", "v", "d", "el"]
 useless_words += ["ourselves", "hers", "between", "yourself", "but", "again", "there", "about", "once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its", "yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from", "him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don", "nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above", "both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and", "been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why", "so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only", "myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a", "by", "doing", "it", "how", "further", "was", "here", "than"]
 
-def normalize_data_binary(names, labels, stats):
+'''def normalize_data_binary(names, labels, stats):
     topics_0_1 = {0: [], 1: []}
     names_two = {0: [], 1: []}
     for x in names:
@@ -65,6 +65,40 @@ def normalize_data_binary(names, labels, stats):
         names_two_num[1].append(names_two[1][item])
     new_list = topics_0_1_0 + topics_0_1_1
     new_list_output = [0]*min_class + [1]*min_class
+    new_names_list = names_two_num[0] + names_two_num[1]
+    indices = [i for i in range(min_class*2)]
+    np.random.shuffle(indices)
+    output_items = [new_list[indices[i]] for i in range(min_class*2)]
+    output_labels = [new_list_output[indices[i]] for i in range(min_class*2)]
+    output_names = [new_names_list[item] for item in indices]
+    return output_items, output_labels, output_names'''
+
+def normalize_data_binary(names, labels, stats):
+    topics_0_1 = {1: [], 2: []}
+    names_two = {1: [], 2: []}
+    for x in names:
+        rating = int(labels[x])
+        if x in stats and not rating == 3:
+            if rating < 3:
+                topics_0_1[1].append(stats[x])
+                names_two[1].append(x)
+            else:
+                topics_0_1[2].append(stats[x])
+                names_two[2].append(x)
+    min_class = min(len(topics_0_1[1]), len(topics_0_1[2]))
+    idx_0 = np.random.choice(np.arange(len(topics_0_1[1])), min_class, replace=False)
+    idx_1 = np.random.choice(np.arange(len(topics_0_1[2])), min_class, replace=False)
+    topics_0_1_0 = []
+    topics_0_1_1 = []
+    names_two_num = [[], []]
+    for item in idx_0:
+        topics_0_1_0.append(topics_0_1[1][item])
+        names_two_num[0].append(names_two[1][item])
+    for item in idx_1:
+        topics_0_1_0.append(topics_0_1[2][item])
+        names_two_num[1].append(names_two[2][item])
+    new_list = topics_0_1_0 + topics_0_1_1
+    new_list_output = [1]*min_class + [2]*min_class
     new_names_list = names_two_num[0] + names_two_num[1]
     indices = [i for i in range(min_class*2)]
     np.random.shuffle(indices)
@@ -331,7 +365,7 @@ for id in test:
     test_classes[int(effective_data_stats[id])] += 1
 print("test classes: %s" % test_classes)
 
-train_topics, train_out, train_ids = normalize_data_five(train, effective_data_clean, topics_data_stats)
+train_topics, train_out, train_ids = normalize_data_binary(train, effective_data_clean, topics_data_stats)
 train_out_counts = collections.Counter(train_out)
 wrong_labels = 0
 for i in range(len(train_ids)):
@@ -340,7 +374,7 @@ for i in range(len(train_ids)):
         wrong_labels += 1
 print("Wrong labels: %d" % wrong_labels)
 
-test_topics, test_out, test_ids = normalize_data_five(test, effective_data_clean, topics_data_stats)
+test_topics, test_out, test_ids = normalize_data_binary(test, effective_data_clean, topics_data_stats)
 test_out_counts = collections.Counter(test_out)
 wrong_labels = 0
 for i in range(len(test_ids)):
@@ -476,7 +510,7 @@ test_text = [[test_text_length[i][0], test_meaningfulness[i][0], test_avg_word_l
 text_pred = text_SVM.predict(test_text)
 print("Text SVM score: %.4f" % (text_SVM.score(test_text, test_out)))
 
-print(train_mem[0], train_opflow[0], train_cropped_30[0], train_avg_hue[0])
+#print(train_mem[0], train_opflow[0], train_cropped_30[0], train_avg_hue[0])
 x = [list(train_topics[i]) + list(train_sents[i]) + train_mem[i] + train_opflow[i] + train_cropped_30[i] + train_cropped_60[i] + train_avg_hue[i] + train_med_hue[i] + train_exciting[i] for i in range(len(train_ids))]
 total_SVM = SVC(kernel = 'rbf', decision_function_shape='ovr', C=1)
 total_SVM.fit(x, train_out)
@@ -530,18 +564,18 @@ predictions_in = []
 predictions_out = []
 predictions_train_size = math.floor(len(test_ids) * .5)
 predictions_test_size = len(test_ids) - predictions_train_size
-print("Predictions test size: %d" % predictions_test_size)
+#print("Predictions test size: %d" % predictions_test_size)
 predictions_train, predictions_test = train_test_split(test_ids, train_size = predictions_train_size, test_size = predictions_test_size)
 predictions_test_labels = [test_out[test_ids.index(x)] for x in predictions_test]
 predictions_test_counts = {key : 0 for key in range(1, 6)}
 for id in predictions_test:
     predictions_test_counts[test_out[test_ids.index(id)]] += 1
-print("predictions test counts: %s" % predictions_test_counts)
+#print("predictions test counts: %s" % predictions_test_counts)
 predictions_test = normalize(predictions_test, predictions_test_labels, predictions_test_counts, [1, 2, 3, 4, 5])
 predictions_test_counts = {key : 0 for key in range(1, 6)}
 for id in predictions_test:
     predictions_test_counts[test_out[test_ids.index(id)]] += 1
-print("predictions test counts: %s" % predictions_test_counts)
+#print("predictions test counts: %s" % predictions_test_counts)
 predictions_sub_train = [[], [], [], [], [], [], [], [], [], []]
 #predictions_sub_train = []
 predictions_sub_out = [[], [], [], [], [], [], [], [], [], []]
@@ -712,10 +746,10 @@ print(topics_correct)
 print(sents_correct)'''
 for i in range(len(topics_correct)):
     if topics_correct[i] < correct/total:
-        print("Topic %s" % TOPICS[i-1])
+        pass#print("Topic %s" % TOPICS[i-1])
 for i in range(len(sents_correct)):
     if sents_correct[i] < correct/total:
-        print("Sentiment %s" % SENTIMENTS[i-1])
+        pass#print("Sentiment %s" % SENTIMENTS[i-1])
 
 correct = 0
 total = 0
@@ -761,10 +795,10 @@ for sample in test_ids:
             #print("sample: %s, predicted: %d, ground-truth: %d" % (sample, predicted_label, true_label))
         predictions_total += 1
 
-    sents_scores = [sents_svm_correct[sent], opflow_sents_correct[sent], cropped_sents_correct[sent], sents_dt_correct[sent], mem_sents_correct[sent], med_hue_sents_correct[sent], duration_sents_correct[sent], word_count_sents_correct[sent]]
-    topics_scores = [topics_svm_correct[topic], opflow_topics_correct[topic], cropped_topics_correct[topic], topics_dt_correct[topic], mem_topics_correct[topic], med_hue_topics_correct[topic], duration_topics_correct[topic], word_count_topics_correct[topic]]
+    sents_scores = [sents_svm_correct[sent], opflow_sents_correct[sent], cropped_sents_correct[sent], sents_dt_correct[sent], mem_sents_correct[sent], med_hue_sents_correct[sent], duration_sents_correct[sent], word_count_sents_correct[sent], meaningfulness_sents_correct[sent], avg_word_len_sents_correct[sent], sent_anal_sents_correct[sent]]
+    topics_scores = [topics_svm_correct[topic], opflow_topics_correct[topic], cropped_topics_correct[topic], topics_dt_correct[topic], mem_topics_correct[topic], med_hue_topics_correct[topic], duration_topics_correct[topic], word_count_topics_correct[topic], meaningfulness_topics_correct[topic], avg_word_len_topics_correct[topic], sent_anal_topics_correct[topic]]
     #classes = [sents_svm_class, topics_svm_class, opflow_svm_class, cropped_30_class]
-    classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class]
+    classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class]
     high_sents_index = 0
     high_topics_index = 0
     for i in range(len(sents_scores)):

@@ -8,6 +8,40 @@ import math
 from sklearn.model_selection import train_test_split
 from collections import Counter
 
+def normalize_data_binary(names, labels, stats):
+    topics_0_1 = {1: [], 2: []}
+    names_two = {1: [], 2: []}
+    for x in names:
+        rating = int(labels[x])
+        if x in stats and not rating == 3:
+            if rating < 3:
+                topics_0_1[1].append(stats[x])
+                names_two[1].append(x)
+            else:
+                topics_0_1[2].append(stats[x])
+                names_two[2].append(x)
+    min_class = min(len(topics_0_1[1]), len(topics_0_1[2]))
+    idx_0 = np.random.choice(np.arange(len(topics_0_1[1])), min_class, replace=False)
+    idx_1 = np.random.choice(np.arange(len(topics_0_1[2])), min_class, replace=False)
+    topics_0_1_0 = []
+    topics_0_1_1 = []
+    names_two_num = [[], []]
+    for item in idx_0:
+        topics_0_1_0.append(topics_0_1[1][item])
+        names_two_num[0].append(names_two[1][item])
+    for item in idx_1:
+        topics_0_1_0.append(topics_0_1[2][item])
+        names_two_num[1].append(names_two[2][item])
+    new_list = topics_0_1_0 + topics_0_1_1
+    new_list_output = [1]*min_class + [2]*min_class
+    new_names_list = names_two_num[0] + names_two_num[1]
+    indices = [i for i in range(min_class*2)]
+    np.random.shuffle(indices)
+    output_items = [new_list[indices[i]] for i in range(min_class*2)]
+    output_labels = [new_list_output[indices[i]] for i in range(min_class*2)]
+    output_names = [new_names_list[item] for item in indices]
+    return output_items, output_labels, output_names
+
 def normalize_data_five(names, labels, stats):
     five_effectivenss_bins = {1: [], 2: [], 3: [], 4: [], 5: []} # store the data (e.g. optical flow values)
     names_five = {1: [], 2: [], 3: [], 4: [], 5: []} # store the IDs
@@ -128,8 +162,8 @@ video_ids = list(effective_data.keys())
 train_n = math.floor(len(video_ids) * .8)
 test_n = len(video_ids) - train_n
 train, test = train_test_split(video_ids, train_size = train_n, test_size = test_n)
-train_topics, train_out, train_ids = normalize_data_five(train, effective_data, VIDEO_SENTIMENTS)
-test_topics, test_out, test_ids = normalize_data_five(test, effective_data, VIDEO_SENTIMENTS)
+train_topics, train_out, train_ids = normalize_data_binary(train, effective_data, VIDEO_SENTIMENTS)
+test_topics, test_out, test_ids = normalize_data_binary(test, effective_data, VIDEO_SENTIMENTS)
 
 sentiments_SVC = SVC()
 sentiments_train_in = [VIDEO_SENTIMENTS[id] for id in train_ids]
