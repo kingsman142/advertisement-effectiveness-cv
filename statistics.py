@@ -28,6 +28,8 @@ exciting_data_stats = dict(exciting_data)
 funny_data_stats = dict(funny_data)
 language_data_stats = dict(language_data)
 
+effective_class_bins = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
 for video_id, ratings in effective_data.items():
     # Effective data
     ratings = np.array(ratings).astype(int) # Convert the list from strings to integers
@@ -37,6 +39,7 @@ for video_id, ratings in effective_data.items():
     ratings_mean = round(ratings_mean, 3)
     ratings_mode = scipy.stats.mstats.mode(ratings).mode[0] # Arbitrarily choose the 0th mode value if there are several
     ratings_cv = ratings_std / ratings_mode # Calculate coefficient of variation (std / mean), ranging from -1 to +1
+    effective_class_bins[ratings_mode] += 1
 
     # Exciting data
     if video_id in exciting_data_stats:
@@ -71,6 +74,7 @@ print("Num Videos (|cov| <= 0.3): %d" % len(cov_threshold_3))
 print("Average exciting rating std: %.4f" % (avg_exciting_std))
 print("Average funny rating std: %.4f" % (avg_funny_std))
 print("Average language rating std: %.4f" % (avg_language_std))
+print("Effective class bins: %s" % (effective_class_bins))
 
 # Earlier, we computed all the videos with a certain threshold on their coefficient of variation.
 # Let's prune out videos that don't pass our threshold and use the ones below as a 'useful' ones.

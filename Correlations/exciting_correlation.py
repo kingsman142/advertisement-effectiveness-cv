@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 import pickle
 
-VIDEO_EFFECTIVE_RAW_FILE = "./annotations_videos/video/raw_result/video_Effective_raw.json"
-exciting_RAW_FILE = "./annotations_videos/video/cleaned_result/video_Exciting_clean.json"
+VIDEO_EFFECTIVE_RAW_FILE = "../annotations_videos/video/raw_result/video_Effective_raw.json"
+exciting_RAW_FILE = "../annotations_videos/video/cleaned_result/video_Exciting_clean.json"
 
 with open(VIDEO_EFFECTIVE_RAW_FILE, 'r') as video_effective_data:
     data = video_effective_data.read()
