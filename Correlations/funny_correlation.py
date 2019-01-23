@@ -4,8 +4,8 @@ from scipy.stats import pearsonr
 import scipy.stats
 import matplotlib.pyplot as plt
 
-VIDEO_EFFECTIVE_RAW_FILE = "./annotations_videos/video/raw_result/video_Effective_raw.json"
-funny_RAW_FILE = "./annotations_videos/video/cleaned_result/video_Funny_clean.json"
+VIDEO_EFFECTIVE_RAW_FILE = "../annotations_videos/video/raw_result/video_Effective_raw.json"
+funny_RAW_FILE = "../annotations_videos/video/cleaned_result/video_Funny_clean.json"
 
 with open(VIDEO_EFFECTIVE_RAW_FILE, 'r') as video_effective_data:
     data = video_effective_data.read()

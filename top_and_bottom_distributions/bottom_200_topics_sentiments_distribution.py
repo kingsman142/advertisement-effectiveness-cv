@@ -67,9 +67,16 @@ for (count, topic) in sorted([(count, topic) for (topic, count) in topics_count_
 for (count, sentiment) in sorted([(count, sentiment) for (sentiment, count) in sentiments_count_dict.items()], reverse=True):
     sentiments_labels.append(sentiment)
     sentiments_height.append(count)
-topics_pie = [height/sum(topics_height) for height in topics_height]
 
+topics_pie = [height/sum(topics_height) for height in topics_height]
 sentiments_pie = [height/sum(sentiments_height) for height in sentiments_height]
+
+i = next(i for i in range(38) if topics_pie[i] <= 0.01) # first topic that is <= 1% of the bottom 200
+j = next(i for i in range(30) if sentiments_pie[i] <= 0.01) # first sentiment that is <= 1% of the bottom 200
+new_topics_pie = topics_pie[0:i] + [sum(topics_pie[i:])]
+new_sentiments_pie = sentiments_pie[0:j] + [sum(sentiments_pie[j:])]
+new_topics_labels = topics_labels[0:i] + ["Other"]
+new_sentiments_labels = sentiments_labels[0:j] + ["Other"]
 
 topics_distribution = []
 sentiments_distribution = []
@@ -152,31 +159,37 @@ plt.pie(sentiments_pie_normalized, labels=sentiments_labels_copy, autopct='%.2f%
 plt.savefig("bottom_200_sentiments_distribution_pie_normalized.png")
 
 plt.figure()
-topics_colors = ["C"+str(topics_list.index(topic) % 10) for topic in topics_labels if topic != "other"]
-#topics_colors.append("C8")
+topics_colors = ["C"+str(topics_list.index(topic) % 10) for topic in new_topics_labels if topic != "Other"]
+topics_colors.append("C9")
 plt.title("Topics Distribution of 200 Least Effective Ads")
-plt.pie(topics_pie, labels=topics_labels, autopct='%.2f%%', colors=topics_colors, textprops={'fontsize': 9})
+plt.pie(new_topics_pie, labels=new_topics_labels, autopct='%.2f%%', colors=topics_colors, textprops={'fontsize': 8}, pctdistance=0.8)
 plt.savefig("bottom_200_topics_distribution_pie.png")
 
 plt.figure()
-sentiments_colors = ["C"+str(sentiments_list.index(sentiment) % 10) for sentiment in sentiments_labels if sentiment != "other"]
-#sentiments_colors.append("C0")
+sentiments_colors = ["C"+str(sentiments_list.index(sentiment) % 10) for sentiment in new_sentiments_labels if sentiment != "Other"]
+sentiments_colors.append("C9")
 plt.title("Sentiments Distribution of 200 Least Effective Ads")
-plt.pie(sentiments_pie, labels=sentiments_labels, autopct='%.2f%%', colors=sentiments_colors, textprops={'fontsize': 9})
+plt.pie(new_sentiments_pie, labels=new_sentiments_labels, autopct='%.2f%%', colors=sentiments_colors, textprops={'fontsize': 8}, pctdistance=0.8)
 plt.savefig("bottom_200_sentiments_distribution_pie.png")
 
-topics_labels_copy = list(topics_labels)
-topics_pie_normalized, topics_labels_copy = (list(t) for t in zip(*sorted(zip(topics_pie_normalized, topics_labels_copy))))
 plt.figure()
-plt.title("Normalized Topics Distribution, Bottom 200 Most Effective Ads")
+plt.title("Normalized Topics Distribution, 200 Least Effective Ads")
+plt.xlabel('Likelihood Factor of Bottom 200 Distribution Compared to Overall Distribution')
+plt.ylabel('Topics')
+topics_pie_normalized.reverse()
+topics_labels_copy.reverse()
+plt.grid(b=True, which='major', axis='x', linewidth=0.5)
 plt.barh(zero_to_thirtyeight, topics_pie_normalized, align='center', tick_label=topics_labels_copy)
 plt.tight_layout()
 plt.savefig("bottom_200_topics_distribution_normalized.png")
 
-sentiments_labels_copy = list(sentiments_labels)
-sentiments_pie_normalized, sentiments_labels_copy = (list(t) for t in zip(*sorted(zip(sentiments_pie_normalized, sentiments_labels_copy))))
 plt.figure()
-plt.title("Normalized Sentiments Distribution, Bottom 200 Most Effective Ads")
+plt.title("Normalized Sentiments Distribution, 200 Least Effective Ads")
+plt.xlabel('Likelihood Factor of Bottom 200 Distribution Compared to Overall Distribution')
+plt.ylabel('Sentiments')
+sentiments_pie_normalized.reverse()
+sentiments_labels_copy.reverse()
+plt.grid(b=True, which='major', axis='x', linewidth=0.5)
 plt.barh(zero_to_thirty, sentiments_pie_normalized, align='center', tick_label=sentiments_labels_copy)
 plt.tight_layout()
 plt.savefig("bottom_200_sentiments_distribution_normalized.png")

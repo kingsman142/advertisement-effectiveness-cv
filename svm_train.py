@@ -9,35 +9,18 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 import math
 import collections
 from sklearn.preprocessing import normalize
+from sklearn.metrics import confusion_matrix
 import pickle
 from scipy.stats import mode
 import warnings
 import random
 import matplotlib.pyplot as plt
 from collections import Counter
+import os
+import seaborn as sb
+from new_look_code.constants import *
 warnings.filterwarnings("ignore")
 np.set_printoptions(precision=3)
-
-VIDEO_EFFECTIVE_RAW_FILE = "./annotations_videos/video/raw_result/video_Effective_raw.json"
-VIDEO_EFFECTIVE_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Effective_clean.json"
-SENTIMENTS_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Sentiments_clean.json"
-TOPICS_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Topics_clean.json"
-MEM_FILE = "./video_average_memorabilities.json"
-OP_FLOW_FILE = "./optical_flow_bins.json"
-CROPPED_30_FILE = "./video_average_intensities_cropped_30percent.json"
-CROPPED_60_FILE = "./video_average_intensities_cropped_60percent.json"
-AVG_HUE_FILE = "./video_average_hue_normalized.json"
-MED_HUE_FILE = "./video_median_hue_normalized.json"
-EXCITING_FILE = "./video_Exciting_clean.json"
-DURATION_FILE = "./video_Duration_new_raw.json"
-VIDEO_OCR_STATS_FILE = "./video_ocr_stats.json"
-VIDEO_OCR_WORDS_FILE = "./video_ocr_data_clean_words.json"
-NUM_SENTIMENTS = 30
-NUM_TOPICS = 38
-TOPICS = ["restaurant", "chocolate", "chips", "seasoning", "petfood", "alcohol", "coffee", "soda", "cars", "electronics", "phone_tv_internet_providers", "financial", "education", "security", "software", "other_service", "beauty", "healthcare", "clothing", "baby", "game", "cleaning", "home_improvement", "home_appliance", "travel", "media", "sports", "shopping", "gambling", "environment", "animal_right", "human_right", "safety", "smoking_alcohol_abuse", "domestic_violence", "self_esteem", "political", "charities"]
-SENTIMENTS = ["active", "afraid", "alarmed", "alert", "amazed", "amused", "angry", "calm", "cheerful", "confident", "conscious", "creative", "disturbed", "eager", "educated", "emotional", "empathetic", "fashionable", "feminine", "grateful", "inspired", "jealous", "loving", "manly", "persuaded", "pessimistic", "proud", "sad", "thrifty", "youthful"]
-useless_words = ["a", "of", "the", "to", "on", "with", "your", "is", "for", "this", "in", "how", "by", "and", "it", "you", "i", "e", "ry", "an", "not", "s", "its", "what", "are", "get", "be", "o", "at", "have", "as", "no", "do", "am", "me", "de", "my", "am", "wwwesrborg", "ed", "has", "int", "th", "com", "that", "who", "st", "y", "co", "ism", "ma", "sec", "knorr", "presents", "us", "n", "c", "l", "f", "tm", "al", "x", "v", "d", "el"]
-useless_words += ["ourselves", "hers", "between", "yourself", "but", "again", "there", "about", "once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its", "yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from", "him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don", "nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above", "both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and", "been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why", "so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only", "myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a", "by", "doing", "it", "how", "further", "was", "here", "than"]
 
 '''def normalize_data_binary(names, labels, stats):
     topics_0_1 = {0: [], 1: []}
@@ -72,6 +55,21 @@ useless_words += ["ourselves", "hers", "between", "yourself", "but", "again", "t
     output_labels = [new_list_output[indices[i]] for i in range(min_class*2)]
     output_names = [new_names_list[item] for item in indices]
     return output_items, output_labels, output_names'''
+
+def trainSVM(data, train_y, test_y, train_ids, test_ids, wrap_in_list, kernel, degree, decision_function_shape, C, name):
+    if wrap_in_list:
+        train_x = [[data[x]] for x in train_ids if x in data]
+        test_x = [[data[x]] for x in test_ids if x in data]
+    else:
+        train_x = [data[x] for x in train_ids if x in data]
+        test_x = [data[x] for x in test_ids if x in data]
+    SVM = SVC(kernel=kernel, degree=degree, decision_function_shape=decision_function_shape, C=C)
+    SVM.fit(train_x, train_y)
+    pred = SVM.predict(test_x)
+    pred_train = SVM.predict(train_x)
+    score = SVM.score(test_x, test_y)
+    print(name + " SVM score: %.4f" % (score))
+    return pred, pred_train, train_x, test_x
 
 def normalize_data_binary(names, labels, stats):
     topics_0_1 = {1: [], 2: []}
@@ -299,6 +297,24 @@ with open(VIDEO_OCR_STATS_FILE, "r") as video_ocr_data:
 with open(VIDEO_OCR_WORDS_FILE, "r") as ocr_file:
     ocr_data_clean = json.loads(ocr_file.read())
 
+with open(AUDIO_FILE, "r") as audio_file:
+    audio_stats = json.loads(audio_file.read())
+
+with open(EXPRESSIONS_FILE, "r") as expressions_file:
+    expressions_stats = json.loads(expressions_file.read())
+
+with open(PLACES_FILE, "r") as places_file:
+    places_stats = json.loads(places_file.read())
+
+with open(EMOTIONS_FILE, "r") as emotions_file:
+    emotions_stats = json.loads(emotions_file.read())
+
+with open(CLIMAX_FILE, "r") as climax_file:
+    climax_stats = json.loads(climax_file.read())
+
+with open(OBJECTS_FILE, "r") as objects_file:
+    objects_stats = json.loads(objects_file.read())
+
 effective_data_stats = dict(effective_data) # Make a copy of the data that holds the standard deviation for each video's ratings
 sentiments_data_stats = dict(sentiments_data) # Make a copy
 topics_data_stats = dict(topics_data) # Make a copy
@@ -351,8 +367,8 @@ plt.show()'''
 
 top = [top[i] / top_cou[i] for i in range(NUM_TOPICS)]
 sen = [sen[i] / sen_cou[i] for i in range(NUM_SENTIMENTS)]
-print(top)
-print(sen)
+#print(top)
+#print(sen)
 
 video_ids = list(effective_data_stats.keys())
 
@@ -365,7 +381,7 @@ for id in test:
     test_classes[int(effective_data_stats[id])] += 1
 print("test classes: %s" % test_classes)
 
-train_topics, train_out, train_ids = normalize_data_binary(train, effective_data_clean, topics_data_stats)
+train_topics, train_out, train_ids = normalize_data_five(train, effective_data_clean, topics_data_stats)
 train_out_counts = collections.Counter(train_out)
 wrong_labels = 0
 for i in range(len(train_ids)):
@@ -374,7 +390,7 @@ for i in range(len(train_ids)):
         wrong_labels += 1
 print("Wrong labels: %d" % wrong_labels)
 
-test_topics, test_out, test_ids = normalize_data_binary(test, effective_data_clean, topics_data_stats)
+test_topics, test_out, test_ids = normalize_data_five(test, effective_data_clean, topics_data_stats)
 test_out_counts = collections.Counter(test_out)
 wrong_labels = 0
 for i in range(len(test_ids)):
@@ -396,6 +412,7 @@ print(topics_SVM.n_support_)
 print(train_out_counts)
 print(test_out_counts)
 topics_pred = topics_SVM.predict(test_topics)
+topics_pred_train = topics_SVM.predict(train_topics)
 #class_support_vectors_topics = normalize([[topics_SVM.n_support_[i] / train_out_counts[i+1] for i in range(0, len(topics_SVM.n_support_))]], norm='l1')
 #print("Topics SVM Support Vectors: %s" % (class_support_vectors_topics))
 #print("Weights: %s" % (topics_SVM.coef_))
@@ -405,6 +422,7 @@ sents_SVM.fit(train_sents, train_out)
 sents_score = sents_SVM.score(test_sents, test_out)
 print("Sentiments SVM score: %.4f" % (sents_score))
 sents_pred = sents_SVM.predict(test_sents)
+sents_pred_train = sents_SVM.predict(train_sents)
 #class_support_vectors_sentiments = normalize([[sents_SVM.n_support_[i] / train_sents_out_counts[i+1] for i in range(0, len(sents_SVM.n_support_))]], norm='l1')
 #print("Sentiments SVM Support Vectors: %s" % (class_support_vectors_sentiments))
 #print("Weights: %s" % (sents_SVM.coef_))
@@ -412,11 +430,13 @@ sents_pred = sents_SVM.predict(test_sents)
 topics_DT = DecisionTreeClassifier()
 topics_DT.fit(train_topics, train_out)
 topics_DT_pred = topics_DT.predict(test_topics)
+topics_DT_pred_train = topics_DT.predict(train_topics)
 print("Topics DT score: %.4f" % (topics_DT.score(test_topics, test_out)))
 
 sents_DT = DecisionTreeClassifier()
 sents_DT.fit(train_sents, train_out)
 sents_DT_pred = sents_DT.predict(test_sents)
+sents_DT_pred_train = sents_DT.predict(train_sents)
 print("Sentiments DT score: %.4f" % (sents_DT.score(test_sents, test_out)))
 
 exciting_logress = LogisticRegression()
@@ -424,62 +444,23 @@ train_exciting = [[exciting_data[x]] for x in train_ids]
 exciting_logress.fit(train_exciting, train_out)
 test_exciting = [[exciting_data[x]] for x in test_ids]
 exciting_pred = exciting_logress.predict(test_exciting)
+exciting_pred_train = exciting_logress.predict(train_exciting)
 print("Exciting score: %.4f" % (exciting_logress.score(test_exciting, test_out)))
 
-mem_SVM = SVC(kernel='poly', degree=7, decision_function_shape='ovr', C=1)
-train_mem = [[mem_data[x]] for x in train_ids]
-mem_SVM.fit(train_mem, train_out)
-test_mem = [[mem_data[x]] for x in test_ids]
-mem_SVM_pred = mem_SVM.predict(test_mem)
-print("Mem SVM score: %.4f" % (mem_SVM.score(test_mem, test_out)))
-
-opflow_SVM = SVC(kernel='poly', degree=7, decision_function_shape='ovr', C=1)
-train_opflow = [opflow_data[x] for x in train_ids]
-opflow_SVM.fit(train_opflow, train_out)
-test_opflow = [opflow_data[x] for x in test_ids]
-opflow_SVM_pred = opflow_SVM.predict(test_opflow)
-print("Opflow SVM score: %.4f" % (opflow_SVM.score(test_opflow, test_out)))
-
-cropped_30_SVM = SVC(kernel='poly', degree=7, decision_function_shape='ovr', C=1)
-train_cropped_30 = [[video_intensities_30percent[x]] for x in train_ids]
-cropped_30_SVM.fit(train_cropped_30, train_out)
-test_cropped_30 = [[video_intensities_30percent[x]] for x in test_ids]
-cropped_30_SVM_pred = cropped_30_SVM.predict(test_cropped_30)
-print("cropped_30 SVM score: %.4f" % (cropped_30_SVM.score(test_cropped_30, test_out)))
-
-cropped_60_SVM = SVC(kernel='poly', degree=7, decision_function_shape='ovr', C=1)
-train_cropped_60 = [[video_intensities_60percent[x]] for x in train_ids]
-cropped_60_SVM.fit(train_cropped_60, train_out)
-test_cropped_60 = [[video_intensities_60percent[x]] for x in test_ids]
-cropped_60_SVM_pred = cropped_60_SVM.predict(test_cropped_60)
-print("cropped_60 SVM score: %.4f" % (cropped_60_SVM.score(test_cropped_60, test_out)))
-
-avg_hue_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
-train_avg_hue = [avg_hue_data[x] for x in train_ids]
-avg_hue_SVM.fit(train_avg_hue, train_out)
-test_avg_hue = [avg_hue_data[x] for x in test_ids]
-avg_hue_SVM_pred = avg_hue_SVM.predict(test_avg_hue)
-print("Average Hue SVM score: %.4f" % (avg_hue_SVM.score(test_avg_hue, test_out)))
-
-med_hue_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
-train_med_hue = [med_hue_data[x] for x in train_ids]
-med_hue_SVM.fit(train_med_hue, train_out)
-test_med_hue = [med_hue_data[x] for x in test_ids]
-med_hue_SVM_pred = med_hue_SVM.predict(test_med_hue)
-print("Median Hue SVM score: %.4f" % (med_hue_SVM.score(test_med_hue, test_out)))
-
-duration_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
-train_duration = [[duration_data[x]] for x in train_ids]
-duration_SVM.fit(train_duration, train_out)
-test_duration = [[duration_data[x]] for x in test_ids]
-duration_pred = duration_SVM.predict(test_duration)
-print("Duration SVM score: %.4f" % (duration_SVM.score(test_duration, test_out)))
+mem_SVM_pred, mem_SVM_pred_train, train_mem, test_mem = trainSVM(mem_data, train_out, test_out, train_ids, test_ids, True, 'poly', 7, 'ovr', 1, "Mem")
+opflow_SVM_pred, opflow_SVM_pred_train, train_opflow, test_opflow = trainSVM(opflow_data, train_out, test_out, train_ids, test_ids, False, 'poly', 7, 'ovr', 1, "Opflow")
+cropped_30_SVM_pred, cropped_30_SVM_pred_train, train_cropped_30, test_cropped_30 = trainSVM(video_intensities_30percent, train_out, test_out, train_ids, test_ids, True, 'poly', 7, 'ovr', 1, "cropped_30")
+cropped_60_SVM_pred, cropped_60_SVM_pred_train, train_cropped_60, test_cropped_60 = trainSVM(video_intensities_60percent, train_out, test_out, train_ids, test_ids, True, 'poly', 7, 'ovr', 1, "cropped_60")
+avg_hue_SVM_pred, avg_hue_SVM_pred_train, train_avg_hue, test_avg_hue = trainSVM(avg_hue_data, train_out, test_out, train_ids, test_ids, False, 'rbf', 1, 'ovr', 1, "Average Hue")
+med_hue_SVM_pred, med_hue_SVM_pred_train, train_med_hue, test_med_hue = trainSVM(med_hue_data, train_out, test_out, train_ids, test_ids, False, 'rbf', 1, 'ovr', 1, "Median Hue")
+duration_pred, duration_pred_train, train_duration, test_duration = trainSVM(duration_data, train_out, test_out, train_ids, test_ids, True, 'rbf', 1, 'ovr', 1, "Duration")
 
 text_length_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
 train_text_length = [[ocr_data[x][0]] for x in train_ids]
 text_length_SVM.fit(train_text_length, train_out)
 test_text_length = [[ocr_data[x][0]] for x in test_ids]
 text_length_pred = text_length_SVM.predict(test_text_length)
+text_length_pred_train = text_length_SVM.predict(train_text_length)
 print("Text Length SVM score: %.4f" % (text_length_SVM.score(test_text_length, test_out)))
 
 meaningful_words_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
@@ -487,6 +468,7 @@ train_meaningfulness = [[ocr_data[x][1]] for x in train_ids]
 meaningful_words_SVM.fit(train_meaningfulness, train_out)
 test_meaningfulness = [[ocr_data[x][1]] for x in test_ids]
 meaningfulness_pred = meaningful_words_SVM.predict(test_meaningfulness)
+meaningfulness_pred_train = meaningful_words_SVM.predict(train_meaningfulness)
 print("Meaningful Words SVM score: %.4f" % (meaningful_words_SVM.score(test_meaningfulness, test_out)))
 
 avg_word_len_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
@@ -494,6 +476,7 @@ train_avg_word_len = [[ocr_data[x][2]] for x in train_ids]
 avg_word_len_SVM.fit(train_avg_word_len, train_out)
 test_avg_word_len = [[ocr_data[x][2]] for x in test_ids]
 avg_word_len_pred = avg_word_len_SVM.predict(test_avg_word_len)
+avg_word_len_pred_train = avg_word_len_SVM.predict(train_avg_word_len)
 print("Avg. Word Len SVM score: %.4f" % (avg_word_len_SVM.score(test_avg_word_len, test_out)))
 
 sent_anal_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
@@ -501,6 +484,7 @@ train_sent_anal = [ocr_data[x][3] for x in train_ids]
 sent_anal_SVM.fit(train_sent_anal, train_out)
 test_sent_anal = [ocr_data[x][3] for x in test_ids]
 sent_anal_pred = sent_anal_SVM.predict(test_sent_anal)
+sent_anal_pred_train = sent_anal_SVM.predict(train_sent_anal)
 print("Text Sentiment Analysis SVM score: %.4f" % (sent_anal_SVM.score(test_sent_anal, test_out)))
 
 text_SVM = SVC(kernel='rbf', decision_function_shape='ovr', C=1)
@@ -508,22 +492,34 @@ train_text = [[train_text_length[i][0], train_meaningfulness[i][0], train_avg_wo
 text_SVM.fit(train_text, train_out)
 test_text = [[test_text_length[i][0], test_meaningfulness[i][0], test_avg_word_len[i][0], test_sent_anal[i][0], test_sent_anal[i][1], test_sent_anal[i][2]] for i in range(len(test_ids))]
 text_pred = text_SVM.predict(test_text)
+text_pred_train = text_SVM.predict(train_text)
 print("Text SVM score: %.4f" % (text_SVM.score(test_text, test_out)))
 
-#print(train_mem[0], train_opflow[0], train_cropped_30[0], train_avg_hue[0])
 x = [list(train_topics[i]) + list(train_sents[i]) + train_mem[i] + train_opflow[i] + train_cropped_30[i] + train_cropped_60[i] + train_avg_hue[i] + train_med_hue[i] + train_exciting[i] for i in range(len(train_ids))]
 total_SVM = SVC(kernel = 'rbf', decision_function_shape='ovr', C=1)
 total_SVM.fit(x, train_out)
 y = [list(test_topics[i]) + list(test_sents[i]) + test_mem[i] + test_opflow[i] + test_cropped_30[i] + test_cropped_60[i] + test_avg_hue[i] + test_med_hue[i] + test_exciting[i] for i in range(len(test_ids))]
 total_SVM_pred = total_SVM.predict(y)
+total_SVM_pred_train = total_SVM.predict(x)
 print("Total SVM score: %.4f" % (total_SVM.score(y, test_out)))
 
 word_count_train_in, word_count_test_in = get_word_count_train_test(train_ids, test_ids)
 word_count_SVC = SVC()
 word_count_SVC.fit(word_count_train_in, train_out)
 word_count_pred = word_count_SVC.predict(word_count_test_in)
+word_count_pred_train = word_count_SVC.predict(word_count_train_in)
 word_count_score = word_count_SVC.score(word_count_test_in, test_out)
 print("Word count SVC score: %.4f" % word_count_score)
+
+audio_pred, audio_pred_train, train_audio, test_audio = trainSVM(audio_stats, train_out, test_out, train_ids, test_ids, True, 'linear', 1, 'ovr', 1, "Audio")
+objects_pred, objects_pred_train, train_objects, test_objects = trainSVM(objects_stats, train_out, test_out, train_ids, test_ids, False, 'linear', 1, 'ovr', 1, "Objects")
+places_pred, places_pred_train, train_places, test_places = trainSVM(places_stats, train_out, test_out, train_ids, test_ids, False, 'linear', 1, 'ovr', 1, "Places")
+expressions_pred, expressions_pred_train, train_expressions, test_expressions = trainSVM(expressions_stats, train_out, test_out, train_ids, test_ids, False, 'linear', 1, 'ovr', 1, "Expressions")
+emotions_pred, emotions_pred_train, train_emotions, test_emotions = trainSVM(emotions_stats, train_out, test_out, train_ids, test_ids, False, 'linear', 1, 'ovr', 1, "Emotions")
+
+train_climax_out = [[effective_data_clean[x]] for x in train_ids if x in climax_stats]
+test_climax_out = [[effective_data_clean[x]] for x in test_ids if x in climax_stats]
+climax_pred, climax_pred_train, train_climax, test_climax = trainSVM(climax_stats, train_climax_out, test_climax_out, train_ids, test_ids, True, 'linear', 1, 'ovo', 1, "Climax")
 
 sents_svm_correct = np.zeros(30)
 topics_svm_correct = np.zeros(38)
@@ -558,27 +554,21 @@ duration_sents_correct = np.zeros(30)
 word_count_topics_correct = np.zeros(38)
 word_count_sents_correct = np.zeros(30)
 
+audio_topics_correct = np.zeros(38)
+audio_sents_correct = np.zeros(30)
+objects_topics_correct = np.zeros(38)
+objects_sents_correct = np.zeros(30)
+places_topics_correct = np.zeros(38)
+places_sents_correct = np.zeros(30)
+expressions_topics_correct = np.zeros(38)
+expressions_sents_correct = np.zeros(30)
+emotions_topics_correct = np.zeros(38)
+emotions_sents_correct = np.zeros(30)
+climax_topics_correct = np.zeros(38)
+climax_sents_correct = np.zeros(30)
+
 correct = 0
 total = 0
-predictions_in = []
-predictions_out = []
-predictions_train_size = math.floor(len(test_ids) * .5)
-predictions_test_size = len(test_ids) - predictions_train_size
-#print("Predictions test size: %d" % predictions_test_size)
-predictions_train, predictions_test = train_test_split(test_ids, train_size = predictions_train_size, test_size = predictions_test_size)
-predictions_test_labels = [test_out[test_ids.index(x)] for x in predictions_test]
-predictions_test_counts = {key : 0 for key in range(1, 6)}
-for id in predictions_test:
-    predictions_test_counts[test_out[test_ids.index(id)]] += 1
-#print("predictions test counts: %s" % predictions_test_counts)
-predictions_test = normalize(predictions_test, predictions_test_labels, predictions_test_counts, [1, 2, 3, 4, 5])
-predictions_test_counts = {key : 0 for key in range(1, 6)}
-for id in predictions_test:
-    predictions_test_counts[test_out[test_ids.index(id)]] += 1
-#print("predictions test counts: %s" % predictions_test_counts)
-predictions_sub_train = [[], [], [], [], [], [], [], [], [], []]
-#predictions_sub_train = []
-predictions_sub_out = [[], [], [], [], [], [], [], [], [], []]
 
 for sample in test_ids:
     sample_index = test_ids.index(sample)
@@ -600,8 +590,13 @@ for sample in test_ids:
     sent_anal_class = sent_anal_pred[sample_index]
     duration_class = duration_pred[sample_index]
     word_count_class = word_count_pred[sample_index]
+    audio_class = audio_pred[sample_index]
+    objects_class = objects_pred[sample_index]
+    places_class = places_pred[sample_index]
+    expressions_class = expressions_pred[sample_index]
+    emotions_class = emotions_pred[sample_index]
+    #climax_class = climax_pred[sample_index]
     true_label = test_out[sample_index]
-    predicted_class = -1
 
     topic = list(test_topics[sample_index]).index(1)
     sent = list(test_sents[sample_index]).index(1)
@@ -646,57 +641,27 @@ for sample in test_ids:
     if word_count_class == true_label:
         word_count_topics_correct[topic] += 1
         word_count_sents_correct[sent] += 1
+    if audio_class == true_label:
+        audio_topics_correct[topic] += 1
+        audio_sents_correct[sent] += 1
+    if objects_class == true_label:
+        objects_topics_correct[topic] += 1
+        objects_sents_correct[sent] += 1
+    if places_class == true_label:
+        places_topics_correct[topic] += 1
+        places_sents_correct[sent] += 1
+    if expressions_class == true_label:
+        expressions_topics_correct[topic] += 1
+        expressions_sents_correct[sent] += 1
+    if emotions_class == true_label:
+        emotions_topics_correct[topic] += 1
+        emotions_sents_correct[sent] += 1
+    #if climax_class == true_label:
+    #    climax_topics_correct[topic] += 1
+    #    climax_sents_correct[sent] += 1
     topics_totals[topic] += 1
     sents_totals[sent] += 1
 
-    if sample in predictions_train:
-        predictions_sub = [sents_svm_class, topics_svm_class, opflow_svm_class, cropped_30_class, mem_svm_class, med_hue_svm_class, topics_dt_class, sents_dt_class, cropped_60_class, avg_hue_svm_class]
-        #predictions = [predictions_sub_clfs[0].predict(predictions_sub[0])[0], predictions_sub_clfs[1].predict(predictions_sub[1])[0], predictions_sub_clfs[2].predict(predictions_sub[2])[0], predictions_sub_clfs[3].predict(predictions_sub[3])[0], predictions_sub_clfs[4].predict(predictions_sub[4])[0], predictions_sub_clfs[5].predict(predictions_sub[5])[0], predictions_sub_clfs[6].predict(predictions_sub[6])[0], predictions_sub_clfs[7].predict(predictions[7])[0], predictions_sub_clfs[8].predict(predictions_sub[8])[0], predictions_sub_clfs[9].predict(predictions_sub[9])[0]]
-        #print(predictions)
-        #predictions = [(0 if sents_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if topics_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if opflow_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if cropped_30_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if mem_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if med_hue_svm_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if topics_dt_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if sents_dt_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if cropped_60_class == true_label else 1) + (random.random() - 0.5)*.6, (0 if avg_hue_svm_class == true_label else 1) + (random.random() - 0.5)*.6]
-        predictions = [0 if sents_svm_class == true_label else 1, 0 if topics_svm_class == true_label else 1, 0 if opflow_svm_class == true_label else 1, 0 if cropped_30_class == true_label else 1, 0 if mem_svm_class == true_label else 1, 0 if med_hue_svm_class == true_label else 1, 0 if topics_dt_class == true_label else 1, 0 if sents_dt_class == true_label else 1, 0 if cropped_60_class == true_label else 1, 0 if avg_hue_svm_class == true_label else 1]
-        #print(predictions)
-        predictions_sub_out[0].append(predictions[0])
-        predictions_sub_out[1].append(predictions[1])
-        predictions_sub_out[2].append(predictions[2])
-        predictions_sub_out[3].append(predictions[3])
-        predictions_sub_out[4].append(predictions[4])
-        predictions_sub_out[5].append(predictions[5])
-        predictions_sub_out[6].append(predictions[6])
-        predictions_sub_out[7].append(predictions[7])
-        predictions_sub_out[8].append(predictions[8])
-        predictions_sub_out[9].append(predictions[9])
-        predictions_sub_train[0].append([predictions_sub[0]])
-        predictions_sub_train[1].append([predictions_sub[1]])
-        predictions_sub_train[2].append([predictions_sub[2]])
-        predictions_sub_train[3].append([predictions_sub[3]])
-        predictions_sub_train[4].append([predictions_sub[4]])
-        predictions_sub_train[5].append([predictions_sub[5]])
-        predictions_sub_train[6].append([predictions_sub[6]])
-        predictions_sub_train[7].append([predictions_sub[7]])
-        predictions_sub_train[8].append([predictions_sub[8]])
-        predictions_sub_train[9].append([predictions_sub[9]])
-        predictions_in.append(predictions)
-        predictions_out.append(true_label)
-        predictions_sub_train.append(predictions_sub)
-
-    #class_counts = collections.Counter([opflow_svm_class, cropped_30_class, cropped_60_class])
-    class_counts = collections.Counter([opflow_svm_class, sents_svm_class, topics_svm_class, exciting_class, total_svm_class])
-    predicted_class = class_counts.most_common(1)[0][0]
-    total += 1
-
-    if predicted_class == true_label:
-        topics_correct[topic] += 1
-        sents_correct[sent] += 1
-        correct += 1
-
-predictions_clf = SVC()
-predictions_clf.fit(predictions_in, predictions_out)
-predictions_sub_clfs = [SVC(), SVC(), SVC(), SVC(), SVC(), SVC(), SVC(), SVC(), SVC(), SVC()]
-#predictions_sub_clfs = [LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression(), LinearRegression()]
-for i in range(len(predictions_sub_clfs)):
-    predictions_sub_clfs[i].fit(predictions_sub_train[i], predictions_sub_out[i])
-print("Combiner accuracy: %.4f (%d correct, %d total)" % (correct/total, correct, total))
 sents_svm_correct = np.array([sents_svm_correct[i] / sents_totals[i] for i in range(30)])
 topics_svm_correct = np.array([topics_svm_correct[i] / topics_totals[i] for i in range(38)])
 opflow_topics_correct = np.array([opflow_topics_correct[i] / topics_totals[i] for i in range(38)])
@@ -726,37 +691,24 @@ med_hue_topics_correct = np.array([med_hue_topics_correct[i] / topics_totals[i] 
 med_hue_sents_correct = np.array([med_hue_sents_correct[i] / sents_totals[i] for i in range(30)])
 cropped_60_topics_correct = np.array([cropped_60_topics_correct[i] / topics_totals[i] for i in range(38)])
 cropped_60_sents_correct = np.array([cropped_60_sents_correct[i] / sents_totals[i] for i in range(30)])
-'''print(sents_svm_correct)
-print(topics_svm_correct)
-print(opflow_topics_correct)
-print(opflow_sents_correct)
-print(cropped_topics_correct)
-print(cropped_sents_correct)
-print(text_len_topics_correct)
-print(text_len_sents_correct)
-print(sent_anal_topics_correct)
-print(sent_anal_sents_correct)
-print(duration_topics_correct)
-print(duration_sents_correct)
-print("\n\n")
-print(topics_totals)
-print(sents_totals)
-print("\n\n")
-print(topics_correct)
-print(sents_correct)'''
-for i in range(len(topics_correct)):
-    if topics_correct[i] < correct/total:
-        pass#print("Topic %s" % TOPICS[i-1])
-for i in range(len(sents_correct)):
-    if sents_correct[i] < correct/total:
-        pass#print("Sentiment %s" % SENTIMENTS[i-1])
+
+audio_topics_correct = np.array([audio_topics_correct[i] / topics_totals[i] for i in range(38)])
+audio_sents_correct = np.array([audio_sents_correct[i] / sents_totals[i] for i in range(30)])
+objects_topics_correct = np.array([objects_topics_correct[i] / topics_totals[i] for i in range(38)])
+objects_sents_correct = np.array([objects_sents_correct[i] / sents_totals[i] for i in range(30)])
+places_topics_correct = np.array([places_topics_correct[i] / topics_totals[i] for i in range(38)])
+places_sents_correct = np.array([places_sents_correct[i] / sents_totals[i] for i in range(30)])
+expressions_topics_correct = np.array([expressions_topics_correct[i] / topics_totals[i] for i in range(38)])
+expressions_sents_correct = np.array([expressions_sents_correct[i] / sents_totals[i] for i in range(30)])
+emotions_topics_correct = np.array([emotions_topics_correct[i] / topics_totals[i] for i in range(38)])
+emotions_sents_correct = np.array([emotions_sents_correct[i] / sents_totals[i] for i in range(30)])
+#climax_topics_correct = np.array([climax_topics_correct[i] / topics_totals[i] for i in range(38)])
+#climax_sents_correct = np.array([climax_sents_correct[i] / sents_totals[i] for i in range(30)])
 
 correct = 0
 total = 0
-predictions_correct = 0
-predictions_total = 0
-classifications = {i : 0 for i in range(1, 6)}
-misclassifications = {i : 0 for i in range(1, 6)}
+predicted_labels = []
+true_labels = []
 for sample in test_ids:
     sample_index = test_ids.index(sample)
     topics_svm_class = topics_pred[sample_index]
@@ -769,11 +721,18 @@ for sample in test_ids:
     med_hue_svm_class = med_hue_SVM_pred[sample_index]
     cropped_30_class = cropped_30_SVM_pred[sample_index]
     cropped_60_class = cropped_60_SVM_pred[sample_index]
+    duration_class = duration_pred[sample_index]
     text_length_class = text_length_pred[sample_index]
     meaningful_words_class = meaningfulness_pred[sample_index]
     avg_word_len_class = avg_word_len_pred[sample_index]
     sent_anal_class = sent_anal_pred[sample_index]
     word_count_class = word_count_pred[sample_index]
+    audio_class = audio_pred[sample_index]
+    objects_class = objects_pred[sample_index]
+    places_class = places_pred[sample_index]
+    expressions_class = expressions_pred[sample_index]
+    emotions_class = emotions_pred[sample_index]
+    #climax_class = climax_pred[sample_index]
     true_label = test_out[sample_index]
     predicted_class = -1
 
@@ -781,24 +740,11 @@ for sample in test_ids:
     sent = list(test_sents[sample_index]).index(1)
     total += 1
 
-    if sample in predictions_test:
-        predictions_sub_test = [topics_svm_class, sents_svm_class, topics_dt_class, sents_dt_class, mem_svm_class, opflow_svm_class, avg_hue_svm_class, med_hue_svm_class, cropped_30_class, cropped_60_class]
-        predictions_sub = [predictions_sub_clfs[0].predict(predictions_sub_test[0])[0], predictions_sub_clfs[1].predict(predictions_sub_test[1])[0], predictions_sub_clfs[2].predict(predictions_sub_test[2])[0], predictions_sub_clfs[3].predict(predictions_sub_test[3])[0], predictions_sub_clfs[4].predict(predictions_sub_test[4])[0], predictions_sub_clfs[5].predict(predictions_sub_test[5])[0], predictions_sub_clfs[6].predict(predictions_sub_test[6])[0], predictions_sub_clfs[7].predict(predictions_sub_test[7])[0], predictions_sub_clfs[8].predict(predictions_sub_test[8])[0], predictions_sub_clfs[9].predict(predictions_sub_test[9])[0]]
-        #print(predictions_sub)
-        #predictions = [0 if sents_svm_class == true_label else 1, 0 if topics_svm_class == true_label else 1, 0 if opflow_svm_class == true_label else 1, 0 if cropped_30_class == true_label else 1, 0 if mem_svm_class == true_label else 1, 0 if med_hue_svm_class == true_label else 1, 0 if topics_dt_class == true_label else 1, 0 if sents_dt_class == true_label else 1, 0 if cropped_60_class == true_label else 1, 0 if avg_hue_svm_class == true_label else 1]
-        predicted_label = predictions_clf.predict([predictions_sub])
-        if predicted_label == true_label:
-            classifications[true_label] += 1
-            predictions_correct += 1
-        else:
-            misclassifications[true_label] += 1
-            #print("sample: %s, predicted: %d, ground-truth: %d" % (sample, predicted_label, true_label))
-        predictions_total += 1
+    sents_scores = [sents_svm_correct[sent], opflow_sents_correct[sent], cropped_sents_correct[sent], sents_dt_correct[sent], mem_sents_correct[sent], med_hue_sents_correct[sent], duration_sents_correct[sent], word_count_sents_correct[sent], meaningfulness_sents_correct[sent], avg_word_len_sents_correct[sent], sent_anal_sents_correct[sent], audio_sents_correct[sent], objects_sents_correct[sent], places_sents_correct[sent], expressions_sents_correct[sent], emotions_sents_correct[sent]]
+    topics_scores = [topics_svm_correct[topic], opflow_topics_correct[topic], cropped_topics_correct[topic], topics_dt_correct[topic], mem_topics_correct[topic], med_hue_topics_correct[topic], duration_topics_correct[topic], word_count_topics_correct[topic], meaningfulness_topics_correct[topic], avg_word_len_topics_correct[topic], sent_anal_topics_correct[topic], audio_topics_correct[topic], objects_topics_correct[topic], places_topics_correct[topic], expressions_topics_correct[topic], emotions_topics_correct[topic]]
 
-    sents_scores = [sents_svm_correct[sent], opflow_sents_correct[sent], cropped_sents_correct[sent], sents_dt_correct[sent], mem_sents_correct[sent], med_hue_sents_correct[sent], duration_sents_correct[sent], word_count_sents_correct[sent], meaningfulness_sents_correct[sent], avg_word_len_sents_correct[sent], sent_anal_sents_correct[sent]]
-    topics_scores = [topics_svm_correct[topic], opflow_topics_correct[topic], cropped_topics_correct[topic], topics_dt_correct[topic], mem_topics_correct[topic], med_hue_topics_correct[topic], duration_topics_correct[topic], word_count_topics_correct[topic], meaningfulness_topics_correct[topic], avg_word_len_topics_correct[topic], sent_anal_topics_correct[topic]]
-    #classes = [sents_svm_class, topics_svm_class, opflow_svm_class, cropped_30_class]
-    classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class]
+    classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class, audio_class, objects_class, places_class, expressions_class, emotions_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class, audio_class, objects_class, places_class, expressions_class, emotions_class]
+
     high_sents_index = 0
     high_topics_index = 0
     for i in range(len(sents_scores)):
@@ -816,14 +762,19 @@ for sample in test_ids:
         topics_correct[topic] += 1
         sents_correct[sent] += 1
         correct += 1
+
+    predicted_labels.append(predicted_class)
+    true_labels.append(true_label)
+
 print("Combiner accuracy (NEW): %.4f (%d correct, %d total)" % (correct/total, correct, total))
-print("Predictions SVC accuracy: %.4f" % (predictions_correct/predictions_total))
-print("Train len: %d" % len(predictions_train))
-print("Test len: %d" % len(predictions_test))
-print(classifications)
-print(misclassifications)
 #print(predictions_clf.coef_)
 
 print("Number of video ids: %d" % (len(video_ids)))
-print("Topics score: %.4f" % (topics_score))
-print("Sents score: %.4f" % (sents_score))
+
+'''plt.figure()
+confusion_matrix = confusion_matrix(true_labels, predicted_labels)
+heatmap = sb.heatmap(confusion_matrix, xticklabels = [1, 2, 4, 5], yticklabels = [1, 2, 4, 5], annot = True, cmap = sb.color_palette("Reds"))
+heatmap.invert_yaxis()
+plt.savefig("four_classification_heatmap.png")
+
+plt.show()'''

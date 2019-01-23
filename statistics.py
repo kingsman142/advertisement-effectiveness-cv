@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import scipy.stats
+from new_look_code.constants import *
 
 VIDEO_EFFECTIVE_RAW_FILE = "./annotations_videos/video/raw_result/video_Effective_raw.json"
 VIDEO_EXCITING_RAW_FILE = "./annotations_videos/video/raw_result/video_Exciting_raw.json"
@@ -10,6 +11,10 @@ VIDEO_LANGUAGE_RAW_FILE = "./annotations_videos/video/raw_result/video_Language_
 with open(VIDEO_EFFECTIVE_RAW_FILE, 'r') as video_effective_data:
     data = video_effective_data.read()
     effective_data = json.loads(data)
+
+with open(VIDEO_EFFECTIVE_CLEAN_FILE, 'r') as video_effective_clean_data:
+    data = video_effective_clean_data.read()
+    effective_clean_data = json.loads(data)
 
 with open(VIDEO_EXCITING_RAW_FILE, 'r') as video_exciting_data:
     data = video_exciting_data.read()
@@ -39,7 +44,9 @@ for video_id, ratings in effective_data.items():
     ratings_mean = round(ratings_mean, 3)
     ratings_mode = scipy.stats.mstats.mode(ratings).mode[0] # Arbitrarily choose the 0th mode value if there are several
     ratings_cv = ratings_std / ratings_mode # Calculate coefficient of variation (std / mean), ranging from -1 to +1
-    effective_class_bins[ratings_mode] += 1
+    #effective_class_bins[ratings_mode] += 1
+
+    effective_class_bins[int(effective_clean_data[video_id])] += 1
 
     # Exciting data
     if video_id in exciting_data_stats:
