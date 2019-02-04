@@ -1,0 +1,29 @@
+VIDEO_EFFECTIVE_RAW_FILE = "./annotations_videos/video/raw_result/video_Effective_raw.json"
+VIDEO_EFFECTIVE_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Effective_clean.json"
+SENTIMENTS_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Sentiments_clean.json"
+TOPICS_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Topics_clean.json"
+FUNNY_CLEAN_FILE = "./annotations_videos/video/cleaned_result/video_Funny_clean.json"
+MEM_FILE = "./video_average_memorabilities.json"
+OP_FLOW_FILE = "./optical_flow_bins.json"
+CROPPED_30_FILE = "./video_average_intensities_cropped_30percent.json"
+CROPPED_60_FILE = "./video_average_intensities_cropped_60percent.json"
+AVG_HUE_FILE = "./video_average_hue_normalized.json"
+MED_HUE_FILE = "./video_median_hue_normalized.json"
+EXCITING_FILE = "./video_Exciting_clean.json"
+DURATION_FILE = "./video_Duration_new_raw.json"
+VIDEO_OCR_STATS_FILE = "./video_ocr_stats.json"
+VIDEO_OCR_WORDS_FILE = "./video_ocr_data_clean_words.json"
+AUDIO_FILE = "./audio.json"
+OBJECTS_FILE = "./objects.json"
+PLACES_FILE = "./places.json"
+EXPRESSIONS_FILE = "./expressions.json"
+EMOTIONS_FILE = "./emotions.json"
+CLIMAX_FILE = "./climax.json"
+
+NUM_SENTIMENTS = 30
+NUM_TOPICS = 38
+TOPICS = ["restaurant", "chocolate", "chips", "seasoning", "petfood", "alcohol", "coffee", "soda", "cars", "electronics", "phone_tv_internet_providers", "financial", "education", "security", "software", "other_service", "beauty", "healthcare", "clothing", "baby", "game", "cleaning", "home_improvement", "home_appliance", "travel", "media", "sports", "shopping", "gambling", "environment", "animal_right", "human_right", "safety", "smoking_alcohol_abuse", "domestic_violence", "self_esteem", "political", "charities"]
+SENTIMENTS = ["active", "afraid", "alarmed", "alert", "amazed", "amused", "angry", "calm", "cheerful", "confident", "conscious", "creative", "disturbed", "eager", "educated", "emotional", "empathetic", "fashionable", "feminine", "grateful", "inspired", "jealous", "loving", "manly", "persuaded", "pessimistic", "proud", "sad", "thrifty", "youthful"]
+
+useless_words = ["a", "of", "the", "to", "on", "with", "your", "is", "for", "this", "in", "how", "by", "and", "it", "you", "i", "e", "ry", "an", "not", "s", "its", "what", "are", "get", "be", "o", "at", "have", "as", "no", "do", "am", "me", "de", "my", "am", "wwwesrborg", "ed", "has", "int", "th", "com", "that", "who", "st", "y", "co", "ism", "ma", "sec", "knorr", "presents", "us", "n", "c", "l", "f", "tm", "al", "x", "v", "d", "el"]
+useless_words += ["ourselves", "hers", "between", "yourself", "but", "again", "there", "about", "once", "during", "out", "very", "having", "with", "they", "own", "an", "be", "some", "for", "do", "its", "yours", "such", "into", "of", "most", "itself", "other", "off", "is", "s", "am", "or", "who", "as", "from", "him", "each", "the", "themselves", "until", "below", "are", "we", "these", "your", "his", "through", "don", "nor", "me", "were", "her", "more", "himself", "this", "down", "should", "our", "their", "while", "above", "both", "up", "to", "ours", "had", "she", "all", "no", "when", "at", "any", "before", "them", "same", "and", "been", "have", "in", "will", "on", "does", "yourselves", "then", "that", "because", "what", "over", "why", "so", "can", "did", "not", "now", "under", "he", "you", "herself", "has", "just", "where", "too", "only", "myself", "which", "those", "i", "after", "few", "whom", "t", "being", "if", "theirs", "my", "against", "a", "by", "doing", "it", "how", "further", "was", "here", "than"]
