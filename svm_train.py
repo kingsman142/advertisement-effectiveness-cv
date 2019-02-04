@@ -1,23 +1,18 @@
-import json
+import json, os, math, collections, pickle, warnings, random
 import numpy as np
-from scipy.stats import pearsonr
+import seaborn as sb
+import matplotlib.pyplot as plt
 import scipy.stats
+from scipy.stats import pearsonr
+from scipy.stats import mode
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC, SVR
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression, LinearRegression
-import math
-import collections
 from sklearn.preprocessing import normalize
 from sklearn.metrics import confusion_matrix
-import pickle
-from scipy.stats import mode
-import warnings
-import random
-import matplotlib.pyplot as plt
+from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, GradientBoostingClassifier, RandomForestClassifier, VotingClassifier
 from collections import Counter
-import os
-import seaborn as sb
 from new_look_code.constants import *
 warnings.filterwarnings("ignore")
 np.set_printoptions(precision=3)
@@ -242,6 +237,10 @@ with open(VIDEO_EFFECTIVE_CLEAN_FILE, "r") as video_effective_data_clean:
     data = video_effective_data_clean.read()
     effective_data_clean = json.loads(data)
 
+with open(FUNNY_CLEAN_FILE, "r") as funny_data_clean:
+    data = funny_data_clean.read()
+    funny_data_clean = json.loads(data)
+
 with open(MEM_FILE, "r") as memorability_data:
     data = memorability_data.read()
     mem_data = json.loads(data)
@@ -372,7 +371,7 @@ sen = [sen[i] / sen_cou[i] for i in range(NUM_SENTIMENTS)]
 
 video_ids = list(effective_data_stats.keys())
 
-train_n = math.floor(len(video_ids) * .8)
+train_n = math.floor(len(video_ids) * .7)
 test_n = len(video_ids) - train_n
 train, test = train_test_split(video_ids, train_size = train_n, test_size = test_n)
 
@@ -381,7 +380,7 @@ for id in test:
     test_classes[int(effective_data_stats[id])] += 1
 print("test classes: %s" % test_classes)
 
-train_topics, train_out, train_ids = normalize_data_five(train, effective_data_clean, topics_data_stats)
+train_topics, train_out, train_ids = normalize_data_four(train, effective_data_clean, topics_data_stats)
 train_out_counts = collections.Counter(train_out)
 wrong_labels = 0
 for i in range(len(train_ids)):
@@ -390,7 +389,7 @@ for i in range(len(train_ids)):
         wrong_labels += 1
 print("Wrong labels: %d" % wrong_labels)
 
-test_topics, test_out, test_ids = normalize_data_five(test, effective_data_clean, topics_data_stats)
+test_topics, test_out, test_ids = normalize_data_four(test, effective_data_clean, topics_data_stats)
 test_out_counts = collections.Counter(test_out)
 wrong_labels = 0
 for i in range(len(test_ids)):
@@ -447,6 +446,7 @@ exciting_pred = exciting_logress.predict(test_exciting)
 exciting_pred_train = exciting_logress.predict(train_exciting)
 print("Exciting score: %.4f" % (exciting_logress.score(test_exciting, test_out)))
 
+exciting_SVM_pred, exciting_SVM_pred_train, train_exciting, test_exciting = trainSVM(exciting_data, train_out, test_out, train_ids, test_ids, True, 'linear', 1, 'ovr', 1, "Exciting")
 mem_SVM_pred, mem_SVM_pred_train, train_mem, test_mem = trainSVM(mem_data, train_out, test_out, train_ids, test_ids, True, 'poly', 7, 'ovr', 1, "Mem")
 opflow_SVM_pred, opflow_SVM_pred_train, train_opflow, test_opflow = trainSVM(opflow_data, train_out, test_out, train_ids, test_ids, False, 'poly', 7, 'ovr', 1, "Opflow")
 cropped_30_SVM_pred, cropped_30_SVM_pred_train, train_cropped_30, test_cropped_30 = trainSVM(video_intensities_30percent, train_out, test_out, train_ids, test_ids, True, 'poly', 7, 'ovr', 1, "cropped_30")
@@ -520,6 +520,32 @@ emotions_pred, emotions_pred_train, train_emotions, test_emotions = trainSVM(emo
 train_climax_out = [[effective_data_clean[x]] for x in train_ids if x in climax_stats]
 test_climax_out = [[effective_data_clean[x]] for x in test_ids if x in climax_stats]
 climax_pred, climax_pred_train, train_climax, test_climax = trainSVM(climax_stats, train_climax_out, test_climax_out, train_ids, test_ids, True, 'linear', 1, 'ovo', 1, "Climax")
+
+funny_pred, funny_pred_train, train_funny, test_funny = trainSVM(funny_data_clean, train_out, test_out, train_ids, test_ids, True, 'rbf', 1, 'ovr', 1, "Funny")
+
+x = [list(train_topics[i]) + list(train_sents[i]) + train_avg_hue[i] + train_duration[i] + train_audio[i] + train_places[i] + train_exciting[i] + train_funny[i] for i in range(len(train_ids))]
+kovashka_SVM = SVC(kernel = 'rbf', decision_function_shape='ovr', C=1)
+kovashka_SVM.fit(x, train_out)
+y = [list(test_topics[i]) + list(test_sents[i]) + test_avg_hue[i] + test_duration[i] + test_audio[i] + test_places[i] + test_exciting[i] + test_funny[i] for i in range(len(test_ids))]
+kovashka_SVM_pred = kovashka_SVM.predict(y)
+kovashka_SVM_pred_train = kovashka_SVM.predict(x)
+print("Kovashka SVM score: %.4f" % (kovashka_SVM.score(y, test_out)))
+
+kovashka_adaboost = AdaBoostClassifier()
+kovashka_adaboost.fit(x, train_out)
+print("Kovashka Adaboost score: %.4f" % (kovashka_adaboost.score(y, test_out)))
+
+kovashka_bagging = BaggingClassifier()
+kovashka_bagging.fit(x, train_out)
+print("Kovashka Bagging score: %.4f" % (kovashka_bagging.score(y, test_out)))
+
+kovashka_gradientboosting = GradientBoostingClassifier()
+kovashka_gradientboosting.fit(x, train_out)
+print("Kovashka Gradient Boosting score: %.4f" % (kovashka_gradientboosting.score(y, test_out)))
+
+kovashka_random_forest = RandomForestClassifier()
+kovashka_random_forest.fit(x, train_out)
+print("Kovashka Random Forest score: %.4f" % (kovashka_random_forest.score(y, test_out)))
 
 sents_svm_correct = np.zeros(30)
 topics_svm_correct = np.zeros(38)
@@ -706,6 +732,7 @@ emotions_sents_correct = np.array([emotions_sents_correct[i] / sents_totals[i] f
 #climax_sents_correct = np.array([climax_sents_correct[i] / sents_totals[i] for i in range(30)])
 
 correct = 0
+voting_correct = 0
 total = 0
 predicted_labels = []
 true_labels = []
@@ -745,6 +772,11 @@ for sample in test_ids:
 
     classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class, audio_class, objects_class, places_class, expressions_class, emotions_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class, audio_class, objects_class, places_class, expressions_class, emotions_class]
 
+    scores = sents_scores + topics_scores
+    top_indices = sorted(range(len(scores)), key=lambda i: scores[i])[-25:]
+    top_preds = [classes[i] for i in top_indices]
+    voting_pred = mode(top_preds)[0][0]
+
     high_sents_index = 0
     high_topics_index = 0
     for i in range(len(sents_scores)):
@@ -763,10 +795,14 @@ for sample in test_ids:
         sents_correct[sent] += 1
         correct += 1
 
+    if voting_pred == true_label:
+        voting_correct += 1
+
     predicted_labels.append(predicted_class)
     true_labels.append(true_label)
 
 print("Combiner accuracy (NEW): %.4f (%d correct, %d total)" % (correct/total, correct, total))
+print("Voting accuracy (NEW): %.4f (%d correct, %d total)" % (voting_correct/total, voting_correct, total))
 #print(predictions_clf.coef_)
 
 print("Number of video ids: %d" % (len(video_ids)))
