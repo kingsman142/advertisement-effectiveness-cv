@@ -371,7 +371,7 @@ sen = [sen[i] / sen_cou[i] for i in range(NUM_SENTIMENTS)]
 
 video_ids = list(effective_data_stats.keys())
 
-train_n = math.floor(len(video_ids) * .7)
+train_n = math.floor(len(video_ids) * .8)
 test_n = len(video_ids) - train_n
 train, test = train_test_split(video_ids, train_size = train_n, test_size = test_n)
 
@@ -380,7 +380,7 @@ for id in test:
     test_classes[int(effective_data_stats[id])] += 1
 print("test classes: %s" % test_classes)
 
-train_topics, train_out, train_ids = normalize_data_four(train, effective_data_clean, topics_data_stats)
+train_topics, train_out, train_ids = normalize_data_binary(train, effective_data_clean, topics_data_stats)
 train_out_counts = collections.Counter(train_out)
 wrong_labels = 0
 for i in range(len(train_ids)):
@@ -389,7 +389,7 @@ for i in range(len(train_ids)):
         wrong_labels += 1
 print("Wrong labels: %d" % wrong_labels)
 
-test_topics, test_out, test_ids = normalize_data_four(test, effective_data_clean, topics_data_stats)
+test_topics, test_out, test_ids = normalize_data_binary(test, effective_data_clean, topics_data_stats)
 test_out_counts = collections.Counter(test_out)
 wrong_labels = 0
 for i in range(len(test_ids)):
@@ -534,6 +534,7 @@ print("Kovashka SVM score: %.4f" % (kovashka_SVM.score(y, test_out)))
 kovashka_adaboost = AdaBoostClassifier()
 kovashka_adaboost.fit(x, train_out)
 print("Kovashka Adaboost score: %.4f" % (kovashka_adaboost.score(y, test_out)))
+kovashka_adaboost_pred = kovashka_adaboost.predict(y)
 
 kovashka_bagging = BaggingClassifier()
 kovashka_bagging.fit(x, train_out)
@@ -542,6 +543,7 @@ print("Kovashka Bagging score: %.4f" % (kovashka_bagging.score(y, test_out)))
 kovashka_gradientboosting = GradientBoostingClassifier()
 kovashka_gradientboosting.fit(x, train_out)
 print("Kovashka Gradient Boosting score: %.4f" % (kovashka_gradientboosting.score(y, test_out)))
+kovashka_gradientboost_pred = kovashka_gradientboosting.predict(y)
 
 kovashka_random_forest = RandomForestClassifier()
 kovashka_random_forest.fit(x, train_out)
@@ -596,36 +598,36 @@ climax_sents_correct = np.zeros(30)
 correct = 0
 total = 0
 
-for sample in test_ids:
-    sample_index = test_ids.index(sample)
-    topics_svm_class = topics_pred[sample_index]
-    sents_svm_class = sents_pred[sample_index]
-    topics_dt_class = topics_DT_pred[sample_index]
-    sents_dt_class = sents_DT_pred[sample_index]
-    mem_svm_class = mem_SVM_pred[sample_index]
-    opflow_svm_class = opflow_SVM_pred[sample_index]
-    avg_hue_svm_class = avg_hue_SVM_pred[sample_index]
-    med_hue_svm_class = med_hue_SVM_pred[sample_index]
-    cropped_30_class = cropped_30_SVM_pred[sample_index]
-    cropped_60_class = cropped_60_SVM_pred[sample_index]
-    exciting_class = exciting_pred[sample_index]
-    total_svm_class = total_SVM_pred[sample_index]
-    text_length_class = text_length_pred[sample_index]
-    meaningful_words_class = meaningfulness_pred[sample_index]
-    avg_word_len_class = avg_word_len_pred[sample_index]
-    sent_anal_class = sent_anal_pred[sample_index]
-    duration_class = duration_pred[sample_index]
-    word_count_class = word_count_pred[sample_index]
-    audio_class = audio_pred[sample_index]
-    objects_class = objects_pred[sample_index]
-    places_class = places_pred[sample_index]
-    expressions_class = expressions_pred[sample_index]
-    emotions_class = emotions_pred[sample_index]
+for sample in train_ids:
+    sample_index = train_ids.index(sample)
+    topics_svm_class = topics_pred_train[sample_index]
+    sents_svm_class = sents_pred_train[sample_index]
+    topics_dt_class = topics_DT_pred_train[sample_index]
+    sents_dt_class = sents_DT_pred_train[sample_index]
+    mem_svm_class = mem_SVM_pred_train[sample_index]
+    opflow_svm_class = opflow_SVM_pred_train[sample_index]
+    avg_hue_svm_class = avg_hue_SVM_pred_train[sample_index]
+    med_hue_svm_class = med_hue_SVM_pred_train[sample_index]
+    cropped_30_class = cropped_30_SVM_pred_train[sample_index]
+    cropped_60_class = cropped_60_SVM_pred_train[sample_index]
+    exciting_class = exciting_pred_train[sample_index]
+    total_svm_class = total_SVM_pred_train[sample_index]
+    text_length_class = text_length_pred_train[sample_index]
+    meaningful_words_class = meaningfulness_pred_train[sample_index]
+    avg_word_len_class = avg_word_len_pred_train[sample_index]
+    sent_anal_class = sent_anal_pred_train[sample_index]
+    duration_class = duration_pred_train[sample_index]
+    word_count_class = word_count_pred_train[sample_index]
+    audio_class = audio_pred_train[sample_index]
+    objects_class = objects_pred_train[sample_index]
+    places_class = places_pred_train[sample_index]
+    expressions_class = expressions_pred_train[sample_index]
+    emotions_class = emotions_pred_train[sample_index]
     #climax_class = climax_pred[sample_index]
-    true_label = test_out[sample_index]
+    true_label = train_out[sample_index]
 
-    topic = list(test_topics[sample_index]).index(1)
-    sent = list(test_sents[sample_index]).index(1)
+    topic = list(train_topics[sample_index]).index(1)
+    sent = list(train_sents[sample_index]).index(1)
     if sents_svm_class == true_label:
         sents_svm_correct[sent] += 1
     if topics_svm_class == true_label:
@@ -733,6 +735,8 @@ emotions_sents_correct = np.array([emotions_sents_correct[i] / sents_totals[i] f
 
 correct = 0
 voting_correct = 0
+true_voting_correct = 0
+final_correct = 0
 total = 0
 predicted_labels = []
 true_labels = []
@@ -759,6 +763,10 @@ for sample in test_ids:
     places_class = places_pred[sample_index]
     expressions_class = expressions_pred[sample_index]
     emotions_class = emotions_pred[sample_index]
+    kovashka_adaboost_class = kovashka_adaboost_pred[sample_index]
+    kovashka_gradientboost_class = kovashka_gradientboost_pred[sample_index]
+    total_SVM_class = total_SVM_pred[sample_index]
+    exciting_class = exciting_pred[sample_index]
     #climax_class = climax_pred[sample_index]
     true_label = test_out[sample_index]
     predicted_class = -1
@@ -773,9 +781,14 @@ for sample in test_ids:
     classes = [sents_svm_class, opflow_svm_class, cropped_30_class, sents_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class, audio_class, objects_class, places_class, expressions_class, emotions_class, topics_svm_class, opflow_svm_class, cropped_30_class, topics_dt_class, mem_svm_class, med_hue_svm_class, duration_class, word_count_class, meaningful_words_class, avg_word_len_class, sent_anal_class, audio_class, objects_class, places_class, expressions_class, emotions_class]
 
     scores = sents_scores + topics_scores
-    top_indices = sorted(range(len(scores)), key=lambda i: scores[i])[-25:]
+    top_indices = sorted(range(len(scores)), key=lambda i: scores[i])[-5:]
     top_preds = [classes[i] for i in top_indices]
     voting_pred = mode(top_preds)[0][0]
+
+    #predictions = [topics_svm_class, sents_svm_class, topics_dt_class, sents_dt_class, mem_svm_class, opflow_svm_class, avg_hue_svm_class, med_hue_svm_class, cropped_30_class, cropped_60_class, duration_class, text_length_class, meaningful_words_class, avg_word_len_class, sent_anal_class, word_count_class, audio_class, objects_class, places_class, expressions_class, emotions_class]
+    predictions = [exciting_class, audio_class, kovashka_gradientboost_class, topics_dt_class, total_svm_class]
+    #predictions = [exciting_class, sent_anal_class, audio_class, kovashka_adaboost_class, topics_dt_class, total_svm_class, duration_class]
+    true_voting_pred = mode(predictions)[0][0]
 
     high_sents_index = 0
     high_topics_index = 0
@@ -797,20 +810,28 @@ for sample in test_ids:
 
     if voting_pred == true_label:
         voting_correct += 1
+    if true_voting_pred == true_label:
+        true_voting_correct += 1
 
-    predicted_labels.append(predicted_class)
+    final_pred = mode([predicted_class, voting_pred, true_voting_pred])[0][0]
+    if final_pred == true_label:
+        final_correct += 1
+
+    predicted_labels.append(kovashka_gradientboost_class)
     true_labels.append(true_label)
 
 print("Combiner accuracy (NEW): %.4f (%d correct, %d total)" % (correct/total, correct, total))
 print("Voting accuracy (NEW): %.4f (%d correct, %d total)" % (voting_correct/total, voting_correct, total))
+print("True Voting accuracy (NEW): %.4f (%d correct, %d total)" % (true_voting_correct/total, true_voting_correct, total))
+print("Final accuracy (NEW): %.4f (%d correct, %d total)" % (final_correct/total, true_voting_correct, total))
 #print(predictions_clf.coef_)
 
 print("Number of video ids: %d" % (len(video_ids)))
 
-'''plt.figure()
+plt.figure()
 confusion_matrix = confusion_matrix(true_labels, predicted_labels)
-heatmap = sb.heatmap(confusion_matrix, xticklabels = [1, 2, 4, 5], yticklabels = [1, 2, 4, 5], annot = True, cmap = sb.color_palette("Reds"))
+heatmap = sb.heatmap(confusion_matrix, xticklabels = ["non-effective", "effective"], yticklabels = ["non-effective", "effective"], annot = True, cmap = sb.color_palette("Reds"))
 heatmap.invert_yaxis()
-plt.savefig("four_classification_heatmap.png")
+plt.savefig("binary_classification_heatmap.png")
 
-plt.show()'''
+plt.show()
